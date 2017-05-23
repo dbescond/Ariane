@@ -1,0 +1,13 @@
+Package: Ariane
+Title: Ariane package internal functions for ILO Statistics department
+Version: 1.0
+Date: 2017-05-15
+Authors@R: person("Bescond", "David", , "bescond@ilo.org", role = c("aut", "cre"))
+URL: https://github.com/dbescond/Ariane
+BugReports: https://github.com/dbescond/Ariane/issues
+Description: internal tools to process and manipulate data for the ILO Statistics Department
+Depends: 
+    R (>= 3.3.3)
+License: MIT
+RoxygenNote: 6.0.1
+VignetteBuilder: knitr
