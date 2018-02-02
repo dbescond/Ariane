@@ -33,3 +33,25 @@ MicroTestClassifVersion <- function(df, Collection, resume = FALSE){
 	}
 
 } 
+
+#' @export
+MicroTestClassifVersionNEW <- function(df, collection, XQ = FALSE){
+
+	test <- Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% collection) 
+
+	if(XQ) {test <- test %>% filter(CIC_IS_XLS_QUEST %in% 'Y')}
+
+	test_version <- test %>% mutate(TEST = paste0(CIC_INDICATOR_CODE, "/", CIC_CLASSIF_VERSION_CODE)) %>% select(TEST) %>% distinct(TEST) %>% t %>% c  
+	test_version <- c(test_version, paste(test$CIC_INDICATOR_CODE, "NA", sep = "/"))
+	rm(test)
+
+	df %>% 		mutate(TEST = paste0(indicator, "/", classif1_version)) %>% 
+				mutate(TEST = gsub("NA_NA", "NA",TEST)) %>%
+				filter(TEST %in% test_version) %>%  
+				mutate(TEST = paste0(indicator, "/", classif1_version)) %>% 
+				mutate(TEST = gsub("NA_NA", "NA",TEST)) %>%
+				filter(TEST %in% test_version) %>%  
+				select(-TEST) 
+	
+
+} 

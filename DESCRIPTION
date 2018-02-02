@@ -1,7 +1,7 @@
 Package: Ariane
 Title: Ariane package internal functions for ILO Statistics department
-Version: 1.0
-Date: 2017-05-15
+Version: 1.1
+Date: 2017-10-09
 Authors@R: person("Bescond", "David", , "bescond@ilo.org", role = c("aut", "cre"))
 URL: https://github.com/dbescond/Ariane
 BugReports: https://github.com/dbescond/Ariane/issues

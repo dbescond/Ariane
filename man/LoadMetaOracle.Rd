@@ -4,7 +4,7 @@
 \alias{LoadMetaOracle}
 \title{ilostat codelist definition}
 \usage{
-LoadMetaOracle(initJ, wd, wdAriane)
+LoadMetaOracle(con, wd, wdAriane)
 }
 \description{
 ilostat codelist definition

@@ -90,7 +90,7 @@
 collectOracle <- function(Query = NULL, Country = NULL, Internal = FALSE, pathfile = NULL){
 	
 	if(!Internal){
-		Query <- paste(c("select(Country_Code, Collection_Code, Indicator_Code, Source_Code, Survey_Id, Sex_Version_Code, Classif1_Version_Code, Classif2_Version_Code, Classif3_Version_Code, Classif4_Version_Code, Classif5_Version_Code, Sex_Code, Classif1_Code, Classif2_Code, Classif3_Code, Classif4_Code, Classif5_Code, Freq_Code, Time, Value, Value_Status_Code, Notes_Source_Code, Notes_Indicator_Code, Notes_Classif_Code)", Query), collapse = " %>% ")
+		Query <- paste(c("select(Country_Code, Collection_Code, Indicator_Code, Source_Code, Survey_Id, Sex_Version_Code, Classif1_Version_Code, Classif2_Version_Code, Sex_Code, Classif1_Code, Classif2_Code, Freq_Code, Time, Value, Value_Status_Code, Notes_Source_Code, Notes_Indicator_Code, Notes_Classif_Code)", Query), collapse = " %>% ")
 	}
 
 	Path <- paste0(ilo:::path$sys, "ILO_Data/ON_ORACLE", pathfile, '/')
@@ -112,8 +112,7 @@ collectOracle <- function(Query = NULL, Country = NULL, Internal = FALSE, pathfi
 		}
 	}
 invisible(gc(reset = TRUE))
-	return(X  %>%
-	mutate_each(funs(as.factor), -ends_with("Value")))
+	return(X)
 }
 
 

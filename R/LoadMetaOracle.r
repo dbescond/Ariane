@@ -5,9 +5,9 @@
 #' @keywords ILO
 #' @export
 
-LoadMetaOracle <- function(initJ, wd, wdAriane){
-require(RJDBC)
-	
+LoadMetaOracle <- function(con, wd, wdAriane){
+
+#  wd  = paste0(ilo:::path$sys, "ILO_Meta/"); wdAriane = 'H:/_Sys/packages/Ariane/'
 
 ################################################################################ 
 ################################################################################
@@ -36,6 +36,7 @@ meta <- c(	"T_CBG_COUNTRY_BY_GROUP",
 			"T_NTY_NOTE_TYPE", 
 			"T_SRC_SOURCE", 
 			"T_SUR_SURVEY", 
+			"T_AGY_AGENCY",
 			"T_TOP_TOPIC", 
 			"T_SUB_SUBJECT", 
 			"T_DTS_DATASET", 
@@ -50,24 +51,27 @@ meta <- c(	"T_CBG_COUNTRY_BY_GROUP",
 			"T_NBS_NOTETYPE_BY_SRC", 
 			"T_NDI_NOTE_DEFAULT_BY_IND", 
 			"T_TIM_TIME", 
-			#"T_SER_SERIE", 
 			"T_NRD_NOTE_REMOVED_DISSEM") 
  
  
 CODE_ORA <-list()
    
-ch <- dbConnect(RJDBC::JDBC(initJ$driverClass,initJ$classPath)  , initJ$dns, initJ$user, initJ$pwd)
+ch 				<- 	dbConnect(drv = Oracle(), username = con[1], password = con[2], dbname = paste0(
+  "(DESCRIPTION=",
+  "(ADDRESS=(PROTOCOL=tcp)(HOST=", con[3], ")(PORT=", 1521, "))",
+  "(CONNECT_DATA=(SERVICE_NAME=",con[4], ")))"))
+  
 for (i in 1:length(meta)){
 
 		QUERY <- paste0("select * from ilostat.",meta[i])
 		res <- dbSendQuery(ch,QUERY)
 		PASS <- as.tbl(dbFetch(res))
 		dbClearResult(res); rm(res)
-		write.csv(PASS,paste0(wd, "help/",meta[i], ".csv"),row.names = FALSE, na = "")
-
-		CODE_ORA[[meta[i]]] <- as.tbl(PASS %>% 	
-										mutate_all(funs(as.character) ) %>%
-										mutate_all(funs(. %>% plyr:::mapvalues(c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))))										
+		data.table:::fwrite(PASS,paste0(wd, "help/",meta[i], ".csv"),na = '')
+		CODE_ORA[[meta[i]]] <- read_csv(paste0(wd, "help/",meta[i], ".csv"))
+		# CODE_ORA[[meta[i]]] <- as.tbl(PASS ) %>% 	
+										# mutate_all(funs(as.character) ) %>%
+										# mutate_all(funs(. %>% plyr:::mapvalues(c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))))										
 										
 	print(meta[i])
  }
@@ -81,8 +85,6 @@ CODE_ORA$T_USR_USER 		<- as.tbl(as.data.frame(read.csv(paste0(wd, "help/T_USR_US
 										
 
 CODE_ORA$T_FRQ_FREQUENCY 	<- as.tbl(as.data.frame(read.csv(paste0(wd, "help/T_FRQ_FREQUENCY.csv"),header = TRUE,sep=",", stringsAsFactors=FALSE))) %>% 
-											mutate_all(funs(as.character))
-CODE_ORA$T_EAP_WEIGHT 		<- as.tbl(as.data.frame(read.csv(paste0(wd, "help/T_EAP_WEIGHT.csv"),header = TRUE,sep=",", stringsAsFactors=FALSE))) %>% 
 											mutate_all(funs(as.character))
 
 charsets 		<- as.tbl(as.data.frame(read.csv(paste0(wd, "help/charsets.csv"),header = TRUE,sep=",", stringsAsFactors=FALSE))) 
@@ -142,12 +144,13 @@ CODE_ORA$T_IND_INDICATOR <- CODE_ORA$T_IND_INDICATOR %>%
 						left_join(select(CODE_ORA$T_CLT_CODELIST, IND_UNIT_MULT_ID = CLT_ID , IND_UNIT_MULT_CODE = CLT_COLUMN_CODE ), by = "IND_UNIT_MULT_ID")
 					
 CODE_ORA$T_SGR_SRC_GROUP <- CODE_ORA$T_CLT_CODELIST %>% filter(CLT_COLUMN_NAME %in% "SOURCE_GROUP") %>% 
-							select(-CLT_COLUMN_NAME) %>% rename(SGR_ID = CLT_ID,
-																							SGR_CODE = CLT_COLUMN_CODE,
-																																		SGR_TEXT_EN = CLT_TEXT_EN,
-																																		SGR_TEXT_FR = CLT_TEXT_FR,
-																																		SGR_TEXT_SP = CLT_TEXT_SP, 
-																																		SGR_SORT = CLT_SORT)
+							select(-CLT_COLUMN_NAME) %>% 
+							rename(	SGR_ID = CLT_ID,
+									SGR_CODE = CLT_COLUMN_CODE,
+									SGR_TEXT_EN = CLT_TEXT_EN,
+									SGR_TEXT_FR = CLT_TEXT_FR,
+									SGR_TEXT_SP = CLT_TEXT_SP, 
+									SGR_SORT = CLT_SORT)
 
 CODE_ORA$T_SRC_SOURCE <- CODE_ORA$T_SRC_SOURCE %>% 
 						left_join(select(CODE_ORA$T_SGR_SRC_GROUP, SRC_GROUP_ID = SGR_ID , SRC_GROUP_CODE = SGR_CODE ), by = "SRC_GROUP_ID") 		
@@ -157,12 +160,13 @@ CODE_ORA$T_CIN_COL_IND <- CODE_ORA$T_CIN_COL_IND %>% left_join(select(CODE_ORA$T
 
 																																		
 																																		
-CODE_ORA$T_DCO_DATASET_COLLECTION <- CODE_ORA$T_DCO_DATASET_COLLECTION %>% left_join(select(Ariane:::CODE_ORA$T_DTS_DATASET, DCO_DATASET_ID = DTS_ID, DTS_CODE), by = 'DCO_DATASET_ID') %>% 
-									left_join(select(CODE_ORA$T_COL_COLLECTION, DCO_COLLECTION_ID =COL_ID, COL_CODE), by = 'DCO_COLLECTION_ID') %>%  
-									add_row(DTS_CODE= 'FACK',  COL_CODE = 'CP' ) %>% 
-									add_row(DTS_CODE= 'FACK',  COL_CODE = 'CP2' ) %>% 
-									add_row(DTS_CODE= 'FACK',  COL_CODE = 'KI' ) %>% 
-									add_row(DTS_CODE= 'FACK',  COL_CODE = 'KIST' )
+CODE_ORA$T_DCO_DATASET_COLLECTION <- CODE_ORA$T_DCO_DATASET_COLLECTION %>% 
+				left_join(select(CODE_ORA$T_DTS_DATASET, DCO_DATASET_ID = DTS_ID, DTS_CODE), by = 'DCO_DATASET_ID') %>% 
+				left_join(select(CODE_ORA$T_COL_COLLECTION, DCO_COLLECTION_ID =COL_ID, COL_CODE), by = 'DCO_COLLECTION_ID') %>%  
+									add_row(DTS_CODE= 'FAKE',  COL_CODE = 'CP' ) %>% 
+									add_row(DTS_CODE= 'FAKE',  COL_CODE = 'CP2' ) %>% 
+									add_row(DTS_CODE= 'FAKE',  COL_CODE = 'KI' ) %>% 
+									add_row(DTS_CODE= 'FAKE',  COL_CODE = 'KIST' )
 											
 											
 
@@ -180,7 +184,16 @@ CODE_ORA$T_SUI_SUBJECT_INDICATOR <- CODE_ORA$T_SUI_SUBJECT_INDICATOR %>%
 							left_join(select(CODE_ORA$T_IND_INDICATOR, SUI_INDICATOR_ID = IND_ID, IND_CODE), by = 'SUI_INDICATOR_ID') %>% 
 							left_join(select(CODE_ORA$T_SUB_SUBJECT, SUI_SUBJECT_ID = SUB_ID, SUB_CODE), by = 'SUI_SUBJECT_ID')
 
-	
+
+
+
+CODE_ORA$T_AGY_AGENCY <- CODE_ORA$T_AGY_AGENCY %>% 
+							left_join(select(CODE_ORA$T_COU_COUNTRY, AGY_COUNTRY_ID = COU_ID , AGY_COUNTRY_CODE = COU_ISO3_CODE ), by = "AGY_COUNTRY_ID") %>% 
+							left_join(select(CODE_ORA$T_CLT_CODELIST %>% filter(CLT_COLUMN_NAME %in% "AGENCY_TYPE"), AGY_TYPE_ID = CLT_ID, AGY_TYPE_CODE = CLT_COLUMN_CODE), by = 'AGY_TYPE_ID' )
+
+
+
+							
 save(CODE_ORA,file = paste0(wd, "CODE_ORA.rda"))
 rm( meta)
  
@@ -200,12 +213,14 @@ COMPUTE$QUARTER 				<- COMPUTEREF %>% filter(ID%in%"COMPUTE_QUARTER",COL_STI%in%
 COMPUTE$YEAR 					<- COMPUTEREF %>% filter(ID%in%"COMPUTE_YEAR",COL_STI%in%1) %>% select(-contains("COL_"))
 COMPUTE$INDICATOR_RT 			<- COMPUTEREF %>% filter(ID%in%"COMPUTE_INDICATOR_RT",COL_STI%in%1) %>% select(-contains("COL_"))
 COMPUTE$INDICATOR_CLASS_RT 		<- COMPUTEREF %>% filter(ID%in%"COMPUTE_INDICATOR_CLASS_RT",COL_STI%in%1) %>% select(-contains("COL_"))
+COMPUTE$INDICATOR_DT 			<- COMPUTEREF %>% filter(ID%in%"COMPUTE_INDICATOR_DT",COL_STI%in%1) %>% select(-contains("COL_"))
+COMPUTE$INDICATOR_FULL_DT 			<- COMPUTEREF %>% filter(ID%in%"COMPUTE_INDICATOR_FULL_DT",COL_STI%in%1) %>% select(-contains("COL_"))
 
 save(COMPUTE,file = paste0(wd, "COMPUTE.rda"))
 rm( COMPUTEREF)
 
-MAP <- read_csv(paste0(wd, "ref_map_plotly.csv")) %>% mutate_all(as.factor) %>% rename(country.label = COUNTRY, country = CODE)
+#MAP <- read_csv(paste0(wd, "ref_map_plotly.csv")) %>% mutate_all(as.factor) %>% rename(ref_area.label = COUNTRY, ref_area = CODE)
 
-save(CODE_ORA, COMPUTE, MAP,charsets,file = paste0(wdAriane,  "R/sysdata.rda"))
+save(CODE_ORA, COMPUTE,charsets,file = paste0(wdAriane,  "R/sysdata.rda"))
 
 }

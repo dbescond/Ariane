@@ -41,15 +41,6 @@ COL_X <- c(
 "Classif2_Version_Item_Code",
 "Classif2_Version_Label",
 "Classif2_Item_Label",
-"Classif3_Version_Item_Code",
-"Classif3_Version_Label",
-"Classif3_Item_Label",
-"Classif4_Version_Item_Code",
-"Classif4_Version_Label",
-"Classif4_Item_Label",
-"Classif5_Version_Item_Code",
-"Classif5_Version_Label",
-"Classif5_Item_Label",
 "Time",
 "Obs_Value",
 "Flag_Code",
@@ -78,23 +69,14 @@ X <- X %>%
 																			to = My_Label_notesJ(levels(as.factor(Notes_Classif_Code)),SEP = "_", Lang = Lang)),
 				Classif1_Version_Code = as.character(Classif1_Version_Code),
 				Classif2_Version_Code = as.character(Classif2_Version_Code),
-				Classif3_Version_Code = as.character(Classif3_Version_Code),
-				Classif4_Version_Code = as.character(Classif4_Version_Code),
-				Classif5_Version_Code = as.character(Classif5_Version_Code),
 				Sex_Item_Code = as.character(Sex_Code),
 				Classif1_Version_Item_Code = as.character(Classif1_Code),
 				Classif2_Version_Item_Code = as.character(Classif2_Code),
-				Classif3_Version_Item_Code = as.character(Classif3_Code),
-				Classif4_Version_Item_Code = as.character(Classif4_Code),
-				Classif5_Version_Item_Code = as.character(Classif5_Code),
 				Obs_Value = Value,
 				Topic_code = substr(Indicator_Code,1,3),
 				Sex_Code = ifelse(!Sex_Item_Code%in%NA , substr(Sex_Item_Code,1,3), as.character(NA)) ,
 				Classif1_Code = ifelse(!Classif1_Version_Code%in%NA,substr(Classif1_Version_Code,1,3), as.character(NA)),
 				Classif2_Code = ifelse(!Classif2_Version_Code%in%NA,substr(Classif2_Version_Code,1,3), as.character(NA)),
-				Classif3_Code = ifelse(!Classif3_Version_Code%in%NA,substr(Classif3_Version_Code,1,3), as.character(NA)),
-				Classif4_Code = ifelse(!Classif4_Version_Code%in%NA,substr(Classif4_Version_Code,1,3), as.character(NA)),
-				Classif5_Code = ifelse(!Classif5_Version_Code%in%NA,substr(Classif5_Version_Code,1,3), as.character(NA)),
 				Time = as.character(Time),
 				Flag_Code = as.character(Value_Status_Code))  %>%
 		select(-Value_Status_Code,-Freq_Code,-Value,-Survey_Id) %>%				
@@ -110,29 +92,20 @@ X <- X %>%
 		left_join(select(T_CLY_CLASSIF_TYPE, Sex_Code = CLY_CODE, SEX_TYPE_SORT = CLY_SORT),by ="Sex_Code") %>%
 		left_join(select(T_CLY_CLASSIF_TYPE, Classif1_Code = CLY_CODE, CLASSIF1_TYPE_SORT = CLY_SORT),by ="Classif1_Code") %>%
 		left_join(select(T_CLY_CLASSIF_TYPE, Classif2_Code = CLY_CODE, CLASSIF2_TYPE_SORT = CLY_SORT),by ="Classif2_Code") %>%
-		left_join(select(T_CLY_CLASSIF_TYPE, Classif3_Code = CLY_CODE, CLASSIF3_TYPE_SORT = CLY_SORT),by ="Classif3_Code") %>%
-		left_join(select(T_CLY_CLASSIF_TYPE, Classif4_Code = CLY_CODE, CLASSIF4_TYPE_SORT = CLY_SORT),by ="Classif4_Code") %>%
-		left_join(select(T_CLY_CLASSIF_TYPE, Classif5_Code = CLY_CODE, CLASSIF5_TYPE_SORT = CLY_SORT),by ="Classif5_Code") %>%
 		mutate(Time = as.character(Time)) %>%
 		left_join(select(T_TIM_TIME, Time = TIM_FORMAT_USER, TIME_ID = TIM_ID),by ="Time") %>%
 				
 		left_join(select(T_CLV_CLASSIF_VERSION, Classif1_Version_Code = CLV_CODE, Classif1_Version_Label = eval(parse(text=paste0("CLV_TEXT_",Lang))),CLASSIF1_VERSION_SORT = CLV_SORT),by ="Classif1_Version_Code") %>%
 		left_join(select(T_CLV_CLASSIF_VERSION, Classif2_Version_Code = CLV_CODE, Classif2_Version_Label = eval(parse(text=paste0("CLV_TEXT_",Lang))),CLASSIF2_VERSION_SORT = CLV_SORT),by ="Classif2_Version_Code") %>%
-		left_join(select(T_CLV_CLASSIF_VERSION, Classif3_Version_Code = CLV_CODE, Classif3_Version_Label = eval(parse(text=paste0("CLV_TEXT_",Lang))),CLASSIF3_VERSION_SORT = CLV_SORT),by ="Classif3_Version_Code") %>%
-		left_join(select(T_CLV_CLASSIF_VERSION, Classif4_Version_Code = CLV_CODE, Classif4_Version_Label = eval(parse(text=paste0("CLV_TEXT_",Lang))),CLASSIF4_VERSION_SORT = CLV_SORT),by ="Classif4_Version_Code") %>%
-		left_join(select(T_CLV_CLASSIF_VERSION, Classif5_Version_Code = CLV_CODE, Classif5_Version_Label = eval(parse(text=paste0("CLV_TEXT_",Lang))),CLASSIF5_VERSION_SORT = CLV_SORT),by ="Classif5_Version_Code") %>%
 		
 		
 		left_join(select(T_CLA_CLASSIF, Sex_Item_Code = CLA_CODE, Sex_Item_Label = eval(parse(text=paste0("CLA_TEXT_",Lang))), SEX_SORT = CLA_SORT),by ="Sex_Item_Code") %>%
 		left_join(select(T_CLA_CLASSIF, Classif1_Version_Item_Code = CLA_CODE, Classif1_Item_Label = eval(parse(text=paste0("CLA_TEXT_",Lang))), CLASSIF1_SORT = CLA_SORT),by ="Classif1_Version_Item_Code") %>%
 		left_join(select(T_CLA_CLASSIF, Classif2_Version_Item_Code = CLA_CODE, Classif2_Item_Label = eval(parse(text=paste0("CLA_TEXT_",Lang))), CLASSIF2_SORT = CLA_SORT),by ="Classif2_Version_Item_Code") %>%
-		left_join(select(T_CLA_CLASSIF, Classif3_Version_Item_Code = CLA_CODE, Classif3_Item_Label = eval(parse(text=paste0("CLA_TEXT_",Lang))), CLASSIF3_SORT = CLA_SORT),by ="Classif3_Version_Item_Code") %>%
-		left_join(select(T_CLA_CLASSIF, Classif4_Version_Item_Code = CLA_CODE, Classif4_Item_Label = eval(parse(text=paste0("CLA_TEXT_",Lang))), CLASSIF4_SORT = CLA_SORT),by ="Classif4_Version_Item_Code") %>%
-		left_join(select(T_CLA_CLASSIF, Classif5_Version_Item_Code = CLA_CODE, Classif5_Item_Label = eval(parse(text=paste0("CLA_TEXT_",Lang))), CLASSIF5_SORT = CLA_SORT),by ="Classif5_Version_Item_Code") %>%
 		left_join(select(FLAG, Flag_Code = CLT_COLUMN_CODE, Flag_Label = eval(parse(text=paste0("CLT_TEXT_",Lang)))),by ="Flag_Code") %>%
-		select(-Sex_Version_Code,-Classif1_Version_Code,-Classif2_Version_Code,-Classif3_Version_Code,-Classif4_Version_Code,-Classif5_Version_Code) %>%
+		select(-Sex_Version_Code,-Classif1_Version_Code,-Classif2_Version_Code) %>%
 		mutate(	Lang = tolower(Lang)) %>%
-		select(-Topic_code,-COUNTRY_SORT,-SOURCE_SORT,-SURVEY_SORT,-TOPIC_SORT,-INDICATOR_SORT,-SEX_TYPE_SORT, -CLASSIF1_TYPE_SORT, -CLASSIF2_TYPE_SORT, -CLASSIF3_TYPE_SORT, -CLASSIF4_TYPE_SORT, -CLASSIF5_TYPE_SORT, -CLASSIF1_VERSION_SORT, -CLASSIF2_VERSION_SORT, -CLASSIF3_VERSION_SORT, -CLASSIF4_VERSION_SORT, -CLASSIF5_VERSION_SORT, -TIME_ID, -SEX_SORT, -CLASSIF1_SORT, -CLASSIF2_SORT, -CLASSIF3_SORT, -CLASSIF4_SORT, -CLASSIF5_SORT) %>%
+		select(-Topic_code,-COUNTRY_SORT,-SOURCE_SORT,-SURVEY_SORT,-TOPIC_SORT,-INDICATOR_SORT,-SEX_TYPE_SORT, -CLASSIF1_TYPE_SORT, -CLASSIF2_TYPE_SORT, -CLASSIF1_VERSION_SORT, -CLASSIF2_VERSION_SORT, -TIME_ID, -SEX_SORT, -CLASSIF1_SORT, -CLASSIF2_SORT) %>%
 		select_(.dots  = COL_X)
 		
 }

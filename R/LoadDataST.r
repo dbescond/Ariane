@@ -72,7 +72,7 @@ for (i in 1:length(ReadMe$PATH)){
 			a <- unlist(str_split(ReadMe$PATH[i], "/"))[length(str_split(ReadMe$PATH[i], "/")[[1]])]		
 			a <- substr(a, 1, nchar(a)-5)
 			colnames(TEST_DUPLICATE)[1] <- "Country_Code/Source_Code/Indicator_Code/Sex_Code/Classif1_Code/Classif2_Code/Time/Freq_Code"
-			write.csv(TEST_DUPLICATE, paste("./Collection/CHECK_DUPLICATE_ON_",a,".csv",sep=""),row.names = FALSE)
+			data.table:::fwrite(TEST_DUPLICATE, paste0(mywd, 'ILO_Data/check/CHECK_DUPLICATE_INFILE_',a,'.csv'),na = '')
 			rm(a)
 		}
 		X <- X 	%>% 
@@ -151,7 +151,12 @@ for (i in 1:length(ReadMe$PATH)){
 		ref_add_repo <- str_split(ReadMe$Types[i], '_', simplify = TRUE)[1,1]
 		load(ReadMe$PATH[i])
 
-
+		try(X <- X %>% select(-Is_Validate), silent = TRUE)	
+		X <- X %>% mutate(IND_CODE = paste0(str_sub(indicator, 1, 9), str_sub(indicator,-2,-1))) %>% left_join(
+						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% 'STI') %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
+						, by = 'IND_CODE') %>% 
+					mutate(check = ifelse(indicator %in% c('EES_T9ES_NB','EMP_T9MP_NB','HOW_T9MP_NB','HOW_X9ES_NB'), 1,check )) %>%
+					filter(check %in% 1) %>% select(-check)
 		ReadMe$COUNTRY[i] 	<- X 	%>% 
 								summarise(test = paste(unique(ref_area), collapse=";")) %>% 
 								as.character
@@ -204,5 +209,7 @@ rm(X)
 
 
 saveRDS(ReadMe %>% select(-SURVEY) %>% as.tbl,file = paste0(wd, "ILO_Data/ON_STI_FILES/ReadMe.rds"))
+
+
 
 }
