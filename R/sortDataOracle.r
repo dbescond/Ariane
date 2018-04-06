@@ -114,6 +114,35 @@ My_unsplit_KEY <- function(X,ID=1,KEY=1,ref="/"){
 
 #' @export
 
+splitid <- function(ReadMe, arguments){
+	REF_COU <- ReadMe
+	if(length(arguments)==0){
+		REF_COU
+	} 
+	else
+	{
+		for(i in 1:length(arguments)){ 
+			eval(parse(text=arguments[[i]]))
+		}
+		test <- data_frame(country = REF_COU, BinSize = as.numeric(file.info(paste0("./Processing/ILO_Data/ON_ORACLE/",REF_COU,".rds"))$size))  %>% 
+						mutate(BinSize = ifelse(BinSize%in%NA, "700", BinSize)) %>% 
+						arrange(as.numeric(BinSize)) %>% mutate(ID = NA)
+		new <- list(1:nb)
+		for (nbbatch in 1:nb){
+			new[[nbbatch]] <- test[seq(nbbatch,nrow(test), nb),] %>% select(-ID)
+			test <- test %>% 
+						left_join(	new[[nbbatch]] %>% mutate(ref = nbbatch),  by = c("country", "BinSize")) %>% 
+						mutate(ID = ifelse(!ref %in% NA, ref, ID)) %>% select(-ref)
+ 			if(nbbatch%%2==0){
+					new[[nbbatch]] <- new[[nbbatch]] %>% arrange(desc(as.numeric(BinSize))) 
+			}	
+		}
+		new[[as.numeric(batch)]]$country
+	}
+}
+
+#' @export
+
 splitCountry <- function(ReadMe, arguments){
 	REF_COU <- unique(unlist(strsplit(ReadMe$COUNTRY,";")))
 	if(length(arguments)==0){
@@ -141,152 +170,34 @@ splitCountry <- function(ReadMe, arguments){
 	}
 }
 
+#' @export
 
-PlyMicrodata <- function(Target){
-# open read me file
-setwd(paste0(getwd(), "./COMMON/A0 Short term indicators/Collection/COU_", Target, "/")) 
-
-Mapping_File <- read_excel(paste0("./ReadME_",Target,".xlsx"), sheet="File", col_names =FALSE) %>% 
-					as.tbl %>%
-					cleanDf(header = FALSE) %>% 
-					filter(Process %in% "Yes") %>% 
-					select(-Process)
-					
-# open definition for mapping
-Mapping_Definition <- read_excel(paste0("./ReadME_",Target,".xlsx"), sheet="Mapping_Definition", col_names =FALSE)  %>% 
-					as.tbl %>%
-					cleanDf(header = FALSE) %>%				
-					filter(Is_Validate %in% "Yes") %>% 
-					select(-Is_Validate)
-
-
-
-# STEP 1 CLEAN UP AND REDUCE ORIGINAL FILE
-for (i in 1:nrow(Mapping_File)){
-
-	files 		<- 	unlist(str_split(as.character(Mapping_File$file_name[i]), ";"))
-	META_FILE 	<-  Mapping_File[i,] %>% 
-						select(contains("ILO_"))
-	Unit 		<- Mapping_File$Unit[i]
-	
-	# rename, set class , clean national columns
-	National_Col 	<- Mapping_Definition %>% 
-						select(-contains("ILO_"),-File) %>% 
-						colnames %>% tolower
-		
-	# split in 3 columns , ILO names, class, national names (ie. SEX_STR_ch06 become, SEX, STR, ch06)
-	#National_Col 	<- cbind(str_split_fixed(str_split_fixed(National_Col, pattern ="=", n = 2)[,1], pattern ="_", n = 2), str_split_fixed(National_Col, pattern ="=", n = 2)[,2],National_Col)
-	National_Col 	<- cbind(paste0(str_split_fixed(National_Col, pattern ="=", n = 2)[,1],"__"), str_split_fixed(National_Col, pattern ="=", n = 2)[,2],National_Col)
-
-	ILO_Col 	<- 	Mapping_Definition %>% 
-						select(contains("ILO_")) %>% 
-						colnames
-	res 		<- 	Mapping_Definition %>% 
-						unite_("ID", ILO_Col, sep="/", remove = TRUE) %>% 
-						select(-File)
-	colnames(res)[2:ncol(res)] <- National_Col[,1]
-
-	Y <- NULL
-	time_period <- length(files)
-
-	for (nb in 1:time_period){
-		# load files
-		X 	<- 	LoadMicrodata(files[nb])
-		colnames(X) <- tolower(colnames(X))
-		
-		
-		# apply the filter at the file level (pop age >= 15 etc)
-		if(!Mapping_File$Filter[i]%in%NA){ 
-			X <- eval(parse(text= paste0("  X %>% filter(",tolower(Mapping_File$Filter[i]),")")))
+splitCountryMicro <- function(workflow, arguments){
+	REF_COU <- workflow %>% count(ref_area) %>% rename(country = ref_area,BinSize = n )
+	if(length(arguments)==0){
+		workflow
+	} 
+	else
+	{
+		for(i in 1:length(arguments)){ 
+			eval(parse(text=arguments[[i]]))
 		}
-		# define weight columns for microdata
-		if(!Mapping_File$Weight[i]%in%NA){ 
-			X 	<- 	eval(parse(text= paste0("  X %>% mutate(Weight = as.numeric(",tolower(Mapping_File$Weight[i]),"))")))
+		test <- REF_COU %>% 
+						arrange(as.numeric(BinSize)) %>% mutate(ID = NA)
+		new <- list(1:nb)
+		for (nbbatch in 1:nb){
+			new[[nbbatch]] <- test[seq(nbbatch,nrow(test), nb),] %>% select(-ID)
+			test <- test %>% 
+						left_join(	new[[nbbatch]] %>% mutate(ref = nbbatch),  by = c("country", "BinSize")) %>% 
+						mutate(ID = ifelse(!ref %in% NA, ref, ID)) %>% select(-ref)
+ 			if(nbbatch%%2==0){
+					new[[nbbatch]] <- new[[nbbatch]] %>% arrange(desc(as.numeric(BinSize))) 
+			}	
 		}
-
-		options(show.error.messages = FALSE)
-		# don't keep un-usefull columns (not define in the mapping file)
-		ref_col <- c("Weight", National_Col[,2] %>% c)
-		
-		X <- X[,colnames(X)[colnames(X)%in%ref_col]]
-		
-	
-		if(!Mapping_File$Drop[i]%in%NA){ 
-			try(	X 	<- 	eval(parse(text= paste0("  X %>% select(-",paste0(c(unlist(str_split(as.character(tolower(Mapping_File$Drop[i]), ";"))), collapse=", -"),")")))
-			))
-		}
-
-		for (j in 1:nrow(National_Col)){
-		# rename columns
-			try(	X <- 	eval(parse(text= paste0("  X %>% rename(",National_Col[j,1]," = ",National_Col[j,2],")"))))
-				
-		}
-
-		test <- National_Col[!National_Col[,1]%in% colnames(X),1]
-		if(length(test)>0){
-			for (f in 1:length(test)){
-				try(res <- eval(parse(text= paste0("  res %>% filter(",test[f]," %in% NA)"))))
-				try(res <- eval(parse(text= paste0("  res %>% select(-",test[f],")"))))
-			}
-		}
-
-		options(show.error.messages = TRUE)
-	
-		X <- select_(X, .dots = as.list(c("Weight", National_Col[National_Col[,1]%in% colnames(X),1])))
-		Y <- Y %>% bind_rows(X) 
-		rm(X)
-		
-		
+		workflow %>% filter(ref_area %in% new[[as.numeric(batch)]]$country)
 	}
-
-	res <- res %>% mutate(Value = as.numeric(NA))
-
-	for (j in 1:nrow(res)){
-		X <- Y 
-		for (k in 2:(ncol(res)-1)){
-			if(!is.na(res[j,k])){
-				X <- eval(parse(text= paste0("  X %>% filter(",colnames(res)[k]," %in% c('", paste0(unlist(str_split(as.character(res[j,k]), ";")), collapse="','"),"') )")))
-				# Z <- X %>% filter()
-			}
-		}
-		
-		if(substr(res[j,"ID"],1,3)%in%c("HOW")){
-			X <- X %>% filter(!HOW__ %in%"0")
-		}	
-	
-		res[j,"Value"] <- X %>% summarise(Value = (sum(Weight)/(1000/ifelse(Unit%in%NA, 1000, as.numeric(Unit))))/time_period)
-
-		if(substr(res[j,"ID"],1,3)%in%c("HOW")){
-			res[j,"Value"] <- Y %>% summarise(Value =weighted.mean(as.numeric(HOW__), Weight))
-		}
-		rm(X)
-	}
-	rm(Y)
-
-	res 	<- 	res %>% 
-					select(ID, Value) %>%
-					separate_("ID", ILO_Col, sep= "/", remove = TRUE) %>% cbind(META_FILE) %>% as.tbl
-	colnames(res) <- gsub("ILO_", "",colnames(res) )
-
-	ref_Sou 	<- unique(res$Source_Code); ref_Sou <- gsub(":", "", ref_Sou)
-	ref_Cou 	<- unique(res$Country_Code)
-	ref_Time 	<- unique(res$Time)
-
-	name_file <- paste0(ref_Cou,"_",ref_Sou,".Rdata")
-
-	if(!file.exists(paste0(getwd(),"/0.Ready/COU_",name_file))){
-		X <- res
-		save(X, file = paste0("./0.Ready/COU_",name_file))
-	}
-	else {
-		load(paste0(getwd(),"/0.Ready/COU_",name_file))
-		X <- X %>% filter(!Time %in% ref_Time) %>% bind_rows(res)
-		save(X, file = paste0("./0.Ready/COU_",name_file))
-	}	
-	rm(res, X)
-	print(paste0(Mapping_File$ILO_Time[i]))
 }
-}
+
 
 #' @export
 
@@ -920,7 +831,7 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 
 # MODE <- "REV"; Collection <- "STI"; files <- FALSE 
 # MODE <- "DEL"; Collection <- "EUROSTAT"; files <- FALSE 
-# setwd("./COMMON/A0 Short term indicators") 
+
 
 
 	my_list <-  list.files(paste0(wd, 'ILO_Data/ON_ORACLE_To_Upload_By_Country/'))
@@ -1098,7 +1009,7 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 
 # MODE <- "REV"; Collection <- "STI"; files <- FALSE 
 # MODE <- "DEL"; Collection <- "EUROSTAT"; files <- FALSE 
-# setwd("./COMMON/A0 Short term indicators") 
+
 
 
 	my_list <-  list.files(paste0(wd, 'ILO_Data/ON_ORACLE_To_Upload_By_Country/'))

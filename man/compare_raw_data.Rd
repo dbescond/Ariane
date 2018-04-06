@@ -4,7 +4,7 @@
 \alias{compare_raw_data}
 \title{Compare STI ORA}
 \usage{
-compare_raw_data(ref_collection = "STI")
+compare_raw_data(ref_collection = "STI", ref_area = NULL)
 }
 \arguments{
 \item{Str}{a character vector with UTF-8 encoding errors.}
@@ -19,9 +19,6 @@ Helper function to efficiently query data from ILOSTAT SDMX API.
 
 # to do
 
-}
-\seealso{
-\code{\link{getCodelist}} \code{\link{getDataStructure}}
 }
 \author{
 ILO bescond

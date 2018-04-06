@@ -47,22 +47,98 @@ e <- new.env()
 	invisible(gc(reset = TRUE))
 	invisible(gc(reset = TRUE))
 	getwd()
-	tools:::makeLazyLoadDB(e, paste0(ilo:::path$sys, "Tmp/data/data/", DBNAme)) 
+	tools:::makeLazyLoadDB(e, paste0(ilo:::path$sys, "Tmp/data/data/cou/", DBNAme)) 
 	rm(e)
 	invisible(gc(reset = TRUE))
 	invisible(gc(reset = TRUE))
-	aa <- file.size(paste0(ilo:::path$sys, "Tmp/data/data/", DBNAme, '.rdb'))
+	aa <- file.size(paste0(ilo:::path$sys, "Tmp/data/data/cou/", DBNAme, '.rdb'))
 	print(aa)
 	if(aa == 0){
-		file.remove(paste0(ilo:::path$sys, "Tmp/data/data/", DBNAme, '.rdb'))
-		file.remove(paste0(ilo:::path$sys, "Tmp/data/data/", DBNAme, '.rdx'))
+		file.remove(paste0(ilo:::path$sys, "Tmp/data/data/cou/", DBNAme, '.rdb'))
+		file.remove(paste0(ilo:::path$sys, "Tmp/data/data/cou/", DBNAme, '.rdx'))
 	} else{
-		file.copy(from = paste0(ilo:::path$sys, "Tmp/data/data/", DBNAme, '.rdb'), to = paste0(ilo:::path$tools, 'R/data/data/', DBNAme, '.rdb'), overwrite = TRUE, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)
-		file.copy(from = paste0(ilo:::path$sys, "Tmp/data/data/", DBNAme, '.rdx'), to = paste0(ilo:::path$tools, 'R/data/data/', DBNAme, '.rdx'), overwrite = TRUE, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)
+		file.copy(from = paste0(ilo:::path$sys, "Tmp/data/data/cou/", DBNAme, '.rdb'), to = paste0(ilo:::path$tools, 'R/data/data/cou/', DBNAme, '.rdb'), overwrite = TRUE, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)
+		file.copy(from = paste0(ilo:::path$sys, "Tmp/data/data/cou/", DBNAme, '.rdx'), to = paste0(ilo:::path$tools, 'R/data/data/cou/', DBNAme, '.rdx'), overwrite = TRUE, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)
 	invisible(gc(reset = TRUE))
 	}
 	
 }
+
+#' @export
+
+prepare_segment_ilo2 <- function(FREQ, DBNAme, query, cou){
+
+e <- new.env()
+
+DB <- NULL
+	for (i in 1:length(cou)){
+		X <- eval(parse(text=paste(c(paste0("readRDS('",paste0(ilo:::path$sys, 'ILO_Data/ORA/', cou[i],'_',FREQ, '.rds'),"')"), query), collapse=" %>% "))) %>%
+				mutate_all(funs(as.character))%>%
+				mutate(obs_value = as.numeric(obs_value)) %>%
+				select(-sex_version, -classif1_version,	-classif2_version)
+		
+		invisible(gc(reset = TRUE))
+		invisible(gc(reset = TRUE))
+	
+		if(nrow(X)>0){	
+	 
+			X <- X  %>% 
+				select(ref_area, source, indicator, sex:obs_status, note_classif, note_indicator, note_source, info)
+					
+			if(!FREQ %in% c('M','Q') ){
+					X <- X %>% mutate(time = as.numeric(time))
+				}
+			invisible(gc(reset = TRUE))				
+			
+			#	
+				
+			DB <- bind_rows(DB, X)
+			
+		}			
+		rm(X)
+	invisible(gc(reset = TRUE))
+	invisible(gc(reset = TRUE))
+			
+	}
+
+	test <- DB %>% count(indicator) %>% left_join(Ariane:::CODE_ORA$T_IND_INDICATOR %>% select(indicator = IND_CODE, IND_SORT), by = 'indicator') %>% arrange(IND_SORT) %>% .$indicator
+	
+	for (i in 1:length(test)){
+		X <- DB %>% filter(indicator %in% test[i]) %>% select(-indicator)
+		 assign(test[i],X ,e)
+		rm(X)
+		invisible(gc(reset = TRUE))
+		invisible(gc(reset = TRUE))
+		DB <- DB %>% filter(!indicator %in% test[i])
+		invisible(gc(reset = TRUE))
+		invisible(gc(reset = TRUE))
+		print(test[i])
+	}
+	rm(DB)
+
+
+
+	
+	invisible(gc(reset = TRUE))
+	invisible(gc(reset = TRUE))
+	getwd()
+	tools:::makeLazyLoadDB(e, paste0(ilo:::path$sys, "Tmp/data/data/ind/", DBNAme)) 
+	rm(e)
+	invisible(gc(reset = TRUE))
+	invisible(gc(reset = TRUE))
+	aa <- file.size(paste0(ilo:::path$sys, "Tmp/data/data/ind/", DBNAme, '.rdb'))
+	print(aa)
+	if(aa == 0){
+		file.remove(paste0(ilo:::path$sys, "Tmp/data/data/ind/", DBNAme, '.rdb'))
+		file.remove(paste0(ilo:::path$sys, "Tmp/data/data/ind/", DBNAme, '.rdx'))
+	} else{
+		file.copy(from = paste0(ilo:::path$sys, "Tmp/data/data/ind/", DBNAme, '.rdb'), to = paste0(ilo:::path$tools, 'R/data/data/ind/', DBNAme, '.rdb'), overwrite = TRUE, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)
+		file.copy(from = paste0(ilo:::path$sys, "Tmp/data/data/ind/", DBNAme, '.rdx'), to = paste0(ilo:::path$tools, 'R/data/data/ind/', DBNAme, '.rdx'), overwrite = TRUE, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)
+	invisible(gc(reset = TRUE))
+	}
+	
+}
+
 
 #' @export
 prepare_codelist_ilo <- function(){
@@ -590,7 +666,7 @@ e <- new.env()
 LastUpdate <- Sys.time()
 assign("lastupdate",LastUpdate,e)
 
-seg <- c(list.files(paste0(ilo:::path$sys, 'Tmp/data/data')) %>% .[str_detect(.,fixed('.rdb'))]) %>% str_sub(., 1, nchar(.)-4)
+seg <- c(list.files(paste0(ilo:::path$sys, 'Tmp/data/data/cou')) %>% .[str_detect(.,fixed('.rdb'))]) %>% str_sub(., 1, nchar(.)-4)
 
 
 seg <- cbind(files = seg, size = file.size(paste0(ilo:::path$sys, 'Tmp/data/data/', seg, '.zip'))) %>% as.data.frame %>% as.tbl %>%

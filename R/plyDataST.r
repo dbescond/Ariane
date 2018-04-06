@@ -14,7 +14,7 @@ plyDataST <- function(Title, ReadMe, mywd){
 Title <- unlist(Title)
 
 
-# Title <- "ALB"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys
+# Title <- "TUN"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys
 KEY_ORACLE 	<- c("Country_Code","Indicator_Code","Source_Code","Sex_Version_Code","Classif1_Version_Code","Classif2_Version_Code","Time","Sex_Code","Classif1_Code","Classif2_Code", "Value","Value_Status_Code","Currency_Code","Value_Notes_String","Qtable_Notes_String")
 key_QTA <- KEY_ORACLE[1:7] ; key_ALL <- KEY_ORACLE[1:10]
 statistics <- c(Collected_manual 	= 0, 
@@ -248,7 +248,7 @@ X <- X %>%
 							!(substr(Time,5,5) %in% c('Q','M') & substr(Source_Code,1,2) %in% 'BE'), # not process yearly data for BE EULFS adjusted
 							str_sub(Time, 5, -1)%in% unlist(c("",str_split(as.character(test$VAR1[i]), ";"))), 
 							!Add_Repository %in% c('MICRO'), 
-							!Country_Code %in% 'EGY'), 
+							!Country_Code %in% c('EGY', 'PSE')), 
 					test[i,])%>% {invisible(gc(reset = TRUE)); .})
 } 
 rm(test, i)
@@ -430,7 +430,7 @@ invisible(gc(reset = TRUE))
 
 
 ##################### ADD OECD data from query
-REF_OECD <- c('518', '536', '2257', '2258', '147', '2253', '358', '12883', '2259', '2249', '2242', '2487', '2244', '2518', '2486', '2260', '2247', '2240', '2251', '2237', '772', '2255', '706', '2238', '259', '2245', '2261', '2246', '463', '2239', '2248', '2236', '2250', '117', '2241', '2252', '2235', '120', '2254', '2243', '2519', '2256', '453', '595', '460', '510', '356', '222')
+REF_OECD <- c('518', '536', '2257', '2258', '147', '2253', '358', '12883', '2259', '2249', '2242', '2487', '2244', '2518', '2486', '2260', '2247', '2240', '2251', '2237', '772', '2255', '706', '2238', '259', '2245', '2261', '2246', '463', '2239', '2248', '2236', '2250', '117', '2241', '2252', '2235', '120', '2254', '2243', '2519', '2256', '453', '595', '460', '356', '222')
 
 IND_OECD <- c('UNE_TUNE_SEX_AGE_DUR_NB', 'EMP_TEMP_SEX_AGE_NB', 'EAP_TEAP_SEX_AGE_NB', 'POP_XWAP_SEX_AGE_NB', 'UNE_TUNE_SEX_AGE_NB', 'EAP_DWAP_SEX_AGE_RT', 'UNE_DEAP_SEX_AGE_RT', 'EMP_DWAP_SEX_AGE_RT', 'EMP_TEMP_SEX_STE_NB', 'EES_TEES_SEX_ECO_NB', 'EMP_TEMP_SEX_ECO_NB')
 test <- X %>% filter((!str_sub(Time,5,5) %in% c('Q','M') & Source_Code %in% REF_OECD & Indicator_Code %in% IND_OECD))

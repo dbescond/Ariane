@@ -7,7 +7,6 @@
 #' @param Str a character vector with UTF-8 encoding errors.
 #' @author ILO bescond
 #' @keywords ILO, SDMX, R
-#' @seealso \code{\link{getCodelist}} \code{\link{getDataStructure}}
 #' @export
 #' @examples
 #' ################################# use to identify correct 'DSD'		 

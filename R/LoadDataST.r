@@ -8,7 +8,6 @@
 LoadDataST <- function(ReadMe, wd){
 
 ################################################################## DATA
-#setwd("./COMMON/A0 Short term indicators") 
 
 
 
@@ -185,6 +184,7 @@ for (i in 1:length(ReadMe$PATH)){
 					Notes_Source_Code = note_source	) %>% 
 				select(-collection) %>% 
 				mutate(	Currency_Code = as.character(NA), 
+						Freq_Code = as.character(Freq_Code), 
 						Add_Repository = ref_add_repo,
 						Add_Status = 'B') %>% 
 				select_(.dots = colnames(HEADER_CL))	%>% 

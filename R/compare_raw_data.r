@@ -7,14 +7,14 @@
 #' @param Str a character vector with UTF-8 encoding errors.
 #' @author ILO bescond
 #' @keywords ILO, SDMX, R
-#' @seealso \code{\link{getCodelist}} \code{\link{getDataStructure}}
+
 #' @examples
 #'
 #'	# to do
 #'
 #' @export	
 
-compare_raw_data <- function(ref_collection = 'STI'){
+compare_raw_data <- function(ref_collection = 'STI', ref_area = NULL){
 
 
 	# clean up directory
@@ -32,7 +32,13 @@ compare_raw_data <- function(ref_collection = 'STI'){
 	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>% as_data_frame
 	ref_file_STI <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI/')) %>% as_data_frame
 
-
+	if(!is.null(ref_area)){
+		ref_file_ORA <- ref_file_ORA %>% filter(str_sub(value,1,3 ) %in% ref_area)
+		ref_file_STI <- ref_file_STI %>% filter(str_sub(value,1,3 ) %in% ref_area)
+	
+	}
+	
+	
 	############################################################
 	############################################################
 	############################################################

@@ -20,9 +20,6 @@ Helper function to efficiently query data from ILOSTAT SDMX API.
 test <- c("emquÃªte", "MÃ©nage")
 recodeChar(test)	
 }
-\seealso{
-\code{\link{getCodelist}} \code{\link{getDataStructure}}
-}
 \author{
 ILO bescond
 }
