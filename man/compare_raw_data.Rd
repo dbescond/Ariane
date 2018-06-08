@@ -4,10 +4,13 @@
 \alias{compare_raw_data}
 \title{Compare STI ORA}
 \usage{
-compare_raw_data(ref_collection = "STI", ref_area = NULL)
+compare_raw_data(ref_collection = "STI", ref_area = NULL,
+  freq_code = c("A", "Q", "M"))
 }
 \arguments{
-\item{Str}{a character vector with UTF-8 encoding errors.}
+\item{ref_collection}{select your collection.}
+
+\item{ref_area}{reduce to selected ref_area.}
 }
 \description{
 create NEW, REV, DEL files at ref_area, freq level

@@ -38,6 +38,11 @@ ReadMe$COUNTRY <- as.character(NA)
 ReadMe$SURVEY <- as.character(NA)
 
 
+iloMicro:::Micro_load()
+TEST_FRAMEWORK <- ilo_tpl$Mapping_indicator %>% select(Is_Validate, indicator, frequency) %>%   filter(Is_Validate %in% 'TRUE') %>%  distinct(indicator, Is_Validate, frequency) %>%
+				mutate(frequency = str_split(frequency, pattern = ';') %>% as.list) %>% unnest %>% distinct %>%
+				mutate(frequency = ifelse(frequency %in% 'A', '', frequency))
+
 
 
 
@@ -71,7 +76,7 @@ for (i in 1:length(ReadMe$PATH)){
 			a <- unlist(str_split(ReadMe$PATH[i], "/"))[length(str_split(ReadMe$PATH[i], "/")[[1]])]		
 			a <- substr(a, 1, nchar(a)-5)
 			colnames(TEST_DUPLICATE)[1] <- "Country_Code/Source_Code/Indicator_Code/Sex_Code/Classif1_Code/Classif2_Code/Time/Freq_Code"
-			data.table:::fwrite(TEST_DUPLICATE, paste0(mywd, 'ILO_Data/check/CHECK_DUPLICATE_INFILE_',a,'.csv'),na = '')
+			data.table:::fwrite(TEST_DUPLICATE, paste0(wd, 'ILO_Data/check/CHECK_DUPLICATE_INFILE_',a,'.csv'),na = '')
 			rm(a)
 		}
 		X <- X 	%>% 
@@ -150,7 +155,12 @@ for (i in 1:length(ReadMe$PATH)){
 		ref_add_repo <- str_split(ReadMe$Types[i], '_', simplify = TRUE)[1,1]
 		load(ReadMe$PATH[i])
 
-		try(X <- X %>% select(-Is_Validate), silent = TRUE)	
+		try(X <- X %>% filter(as.numeric(table_test) < 0.334), silent = TRUE)
+		try(X <- X %>% select(-contains('Is_Validate'), -contains('sample_count'), -contains('table_test'), -contains('ilo_wgt')), silent = TRUE)	
+		X <- X %>% 	mutate(frequency = str_sub(time, 5,5)) %>% left_join(TEST_FRAMEWORK, by = c("indicator", 'frequency')) %>% 
+			filter((str_detect(note_source, 'R1:3513') & Is_Validate %in% 'TRUE') | !str_detect(note_source, 'R1:3513') | str_sub(indicator, 8,8) %in% '1' | str_sub(indicator, 5,5) %in% '4') %>% select(-Is_Validate)
+		
+		
 		X <- X %>% mutate(IND_CODE = paste0(str_sub(indicator, 1, 9), str_sub(indicator,-2,-1))) %>% left_join(
 						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% 'STI') %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
 						, by = 'IND_CODE') %>% 
@@ -197,6 +207,10 @@ for (i in 1:length(ReadMe$PATH)){
 					Classif2_Code = as.character(ifelse(Classif2_Code %in% NA,"XXX_XXX_XXX",Classif2_Code)),
 					Value =as.numeric(Value)) %>% as.tbl
 
+	invisible(gc(reset = TRUE))	
+	invisible(gc(reset = TRUE))	
+
+
 		save(X,file = paste0(wd, "ILO_Data/ON_STI_FILES/File",i,".Rdata"))
 	}
 
@@ -204,8 +218,17 @@ for (i in 1:length(ReadMe$PATH)){
  
 print(paste0(i,"#",length(ReadMe$PATH),"#",nrow(X),"#", nrow(X %>% filter(as.numeric(str_sub(Time,1,4)) >2009)), '#',ReadMe$PATH[i]))
 rm(X)
+
+	invisible(gc(reset = TRUE))	
+	invisible(gc(reset = TRUE))	
+
+
 }
 
+rm(TEST_FRAMEWORK)
+
+	invisible(gc(reset = TRUE))	
+	invisible(gc(reset = TRUE))	
 
 
 saveRDS(ReadMe %>% select(-SURVEY) %>% as.tbl,file = paste0(wd, "ILO_Data/ON_STI_FILES/ReadMe.rds"))
