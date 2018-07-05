@@ -4,7 +4,7 @@
 \alias{plyDataST}
 \title{ilo short term data processing}
 \usage{
-plyDataST(Title, ReadMe, mywd)
+plyDataST(Title, ReadMe, mywd, ilo_tpl)
 }
 \arguments{
 \item{Title}{character string of the country alpha iso code 3.}

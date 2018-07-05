@@ -263,7 +263,7 @@ splitCountry <- function(ReadMe, arguments){
 
 #' @export
 
-splitCountryMicro <- function(workflow, arguments){
+splitCountryMicro_OLD <- function(workflow, arguments){
 	REF_COU <- workflow %>% count(ref_area) %>% rename(country = ref_area,BinSize = n )
 	if(length(arguments)==0){
 		workflow

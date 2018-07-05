@@ -293,7 +293,7 @@ merge_raw_data <- function(ref_collection = 'STI'){
 	
 	# clean up directory
 	
-	ref_file_STI_Upload <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI_Upload/')) %>% as_data_frame
+	ref_file_STI_Upload <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI_Upload/')) %>% as_data_frame %>% filter(str_detect(value, 'STI'))
 	for(i in 1:nrow(ref_file_STI_Upload)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/STI_Upload/', ref_file_STI_Upload$value[i]))
 	}	
@@ -412,7 +412,14 @@ merge_raw_data_ANNUAL <- function(ref_collection = 'YI'){
 	
 	
 	# clean up directory
-
+	
+	ref_file_STI_Upload <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI_Upload/')) %>% as_data_frame %>% filter(str_detect(value, 'YI'))
+	for(i in 1:nrow(ref_file_STI_Upload)){
+		unlink(paste0(ilo:::path$sys, 'ILO_Data/STI_Upload/', ref_file_STI_Upload$value[i]))
+	}	
+	rm(ref_file_STI_Upload)
+	
+	
 
 	
 	
@@ -711,7 +718,10 @@ invisible(gc(reset = TRUE))
 
 STI <- 	STI  %>% filter(indicator %in% TEST_IND)
 					
+# TEST indicator in YI
+TEST_IND <- Ariane:::CODE_ORA$T_CIC_COL %>% filter(CIC_COLLECTION_CODE %in% c('YI')) %>% select(indicator = CIC_INDICATOR_CODE) %>% filter(indicator %in% unique(STI$indicator))%>% .$indicator
 		
+ORA <- 	ORA  %>% filter(indicator %in% TEST_IND)
 		
 		
 		# detect and remove freq tag I12:...
@@ -779,20 +789,21 @@ STI <- 	STI  %>% filter(indicator %in% TEST_IND)
 		
 		############## step 0 manage col data on ORA
 		
-			check_ORA <- ON_ORA %>% filter(TEST %in% c('FALSE_COL', 'FALSE_CAL')) %>% mutate(keep = 1) 
+			check_ORA <- ON_ORA %>% filter(TEST %in% c('FALSE_COL', 'FALSE_CAL')) %>% mutate(keep = 1)  %>% filter(!str_detect(indicator, 'CPI'))
 			
 			check_STI <- STI %>% mutate(collection = 'YI') %>% left_join( 
 								ORA %>% filter(TEST %in% c('FALSE_COL', 'FALSE_CAL')) %>% 
 								distinct(collection, ref_area, source, indicator, time) %>% mutate(keep = 1)  , 
 							by = c("collection", "ref_area", "source", "indicator", "time")) %>% 
 							filter(keep %in% 1) %>% 
-							select( -freq_code, -keep, -TEST) 
-							
+							select( -freq_code, -keep, -TEST) # %>% 
+							# filter(!str_detect(indicator, 'CPI'))# , !str_detect(note_source, 'R1:3902'), !str_detect(note_source, 'R1:2382')) 
+			X1 <- check_ORA
 			if(nrow(check_ORA)>0){
 		
 					X1 <- ORA %>% left_join(check_ORA, by = c("collection", "ref_area", "source", "indicator", "sex_version", "classif1_version", "classif2_version", "time", "TEST")) %>% 
 							filter(keep %in% 1) %>% select(-keep) %>%
-							left_join(check_STI %>% distinct(collection, ref_area, source, indicator, time) %>% mutate(keep = 1), 
+							left_join(check_STI %>% distinct(collection, ref_area, source, indicator, time,note_source) %>% mutate(keep = 1), 
 							by = c("collection", "ref_area", "source", "indicator", "time") ) %>%
 							filter(keep %in% 1) %>% 
 							select( -freq_code, -check, -keep)
@@ -820,7 +831,7 @@ STI <- 	STI  %>% filter(indicator %in% TEST_IND)
 				check_STI <- check_STI %>%  mutate_all(as.character) %>% mutate(obs_value = as.numeric(obs_value))
 				check_STI %>% data.table:::fwrite(file = paste0(ilo:::path$sys, 'ILO_Data/check/ON_STI/',ref_collection,'_FROMSTI_', test$value[i] %>% str_replace('.rds', '.csv')), na = '')
 
-				check_STI <- check_STI %>% count(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version, time)
+				check_STI <- check_STI %>% count(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version, time, note_source)
 
 
 
@@ -835,7 +846,7 @@ STI <- 	STI  %>% filter(indicator %in% TEST_IND)
 							left_join(select(ilo$code$cl_classif_version, classif2_version = code, classif2_version.sort = sort) , by = "classif2_version") %>%
 							left_join(select(ilo$code$cl_indicator, indicator = code, indicator.sort = sort) , by = "indicator") %>% 
 							arrange(indicator.sort, classif1_version.sort, classif2_version.sort, time) %>% 
-							group_by(collection, ref_area, source, indicator, time) %>% 
+							group_by(collection, ref_area, source, indicator, time, note_source) %>% 
 							summarise(sex_version = first(sex_version), 
 									  classif1_version = first(classif1_version),
 									  classif2_version = first(classif2_version),
@@ -989,7 +1000,7 @@ STI <- 	STI  %>% filter(indicator %in% TEST_IND)
 									distinct(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version, time) , 
 											, by = c("collection", "ref_area", "source", "indicator", "sex_version", "classif1_version", "classif2_version", "time")
 									
-									) %>% select(-TEST) 
+									) %>% filter(!(str_sub(indicator, 1,3) %in% c('INJ', 'LAC') & TEST %in% 'TRUE_CAL')) %>% select(-TEST) 
 				
 				if(nrow(X1) > 0){			
 					X1 %>%  mutate_all(as.character) %>% 

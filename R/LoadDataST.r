@@ -39,10 +39,11 @@ ReadMe$SURVEY <- as.character(NA)
 
 
 iloMicro:::Micro_load()
-TEST_FRAMEWORK <- ilo_tpl$Mapping_indicator %>% select(Is_Validate, indicator, frequency) %>%   filter(Is_Validate %in% 'TRUE') %>%  distinct(indicator, Is_Validate, frequency) %>%
-				mutate(frequency = str_split(frequency, pattern = ';') %>% as.list) %>% unnest %>% distinct %>%
+TEST_FRAMEWORK <- ilo_tpl$Mapping_indicator %>% select(Is_Validate, indicator, sex_version = sex_var, classif1_version =  classif1_var , classif2_version = classif2_var, frequency,benchmark) %>%   filter(Is_Validate %in% 'TRUE') %>%
+				mutate(frequency = str_split(frequency, pattern = ';') %>% as.list,benchmark = str_split(benchmark, pattern = ';') %>% as.list) %>% unnest %>% distinct %>%
 				mutate(frequency = ifelse(frequency %in% 'A', '', frequency))
-
+require(ilo)
+init_ilo()
 
 
 
@@ -155,14 +156,19 @@ for (i in 1:length(ReadMe$PATH)){
 		ref_add_repo <- str_split(ReadMe$Types[i], '_', simplify = TRUE)[1,1]
 		load(ReadMe$PATH[i])
 
-		try(X <- X %>% filter(as.numeric(table_test) < 0.334), silent = TRUE)
-		try(X <- X %>% select(-contains('Is_Validate'), -contains('sample_count'), -contains('table_test'), -contains('ilo_wgt')), silent = TRUE)	
-		X <- X %>% 	mutate(frequency = str_sub(time, 5,5)) %>% left_join(TEST_FRAMEWORK, by = c("indicator", 'frequency')) %>% 
-			filter((str_detect(note_source, 'R1:3513') & Is_Validate %in% 'TRUE') | !str_detect(note_source, 'R1:3513') | str_sub(indicator, 8,8) %in% '1' | str_sub(indicator, 5,5) %in% '4') %>% select(-Is_Validate)
+		if(ReadMe$Types[i] %in% 'MICRO_ilostat'){
+			
+			X <- X %>% switch_ilo(version)
+			X <- X %>% 	mutate(frequency = str_sub(time, 5,5)) %>% left_join(TEST_FRAMEWORK, by = c("indicator", 'frequency', 'sex_version', 'classif1_version', 'classif2_version')) %>%
+				filter(Is_Validate %in% 'TRUE') %>% 
+				filter(!(as.numeric(table_test) > 0.3339 & as.numeric(benchmark) == 1) ) %>% select(-contains('Is_Validate'), -contains('frequency'), -contains('sample_count'), -contains('table_test'), -contains('ilo_wgt'), -contains("benchmark") )
+	
+
+		}
 		
 		
 		X <- X %>% mutate(IND_CODE = paste0(str_sub(indicator, 1, 9), str_sub(indicator,-2,-1))) %>% left_join(
-						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% 'STI') %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
+						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% c('STI', 'YI')) %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
 						, by = 'IND_CODE') %>% 
 					mutate(check = ifelse(indicator %in% c('EES_T9ES_NB','EMP_T9MP_NB','HOW_T9MP_NB','HOW_X9ES_NB'), 1,check )) %>%
 					filter(check %in% 1) %>% select(-check)

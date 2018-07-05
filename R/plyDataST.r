@@ -7,14 +7,14 @@
 #' @keywords ILO
 #' @export
 
-plyDataST <- function(Title, ReadMe, mywd){
+plyDataST <- function(Title, ReadMe, mywd, ilo_tpl){
 
 
 ###### def var
 Title <- unlist(Title)
 
 
-# Title <- "PAN"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys
+# Title <- "CHL"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys
 KEY_ORACLE 	<- c("Country_Code","Indicator_Code","Source_Code","Sex_Version_Code","Classif1_Version_Code","Classif2_Version_Code","Time","Sex_Code","Classif1_Code","Classif2_Code", "Value","Value_Status_Code","Currency_Code","Value_Notes_String","Qtable_Notes_String")
 key_QTA <- KEY_ORACLE[1:7] ; key_ALL <- KEY_ORACLE[1:10]
 statistics <- c(Collected_manual 	= 0, 
@@ -90,9 +90,12 @@ X <- X %>%
 		#distinct(Country_Code, Indicator_Code, Source_Code, Time, Sex_Code, Classif1_Code, Classif2_Code, Freq_Code, Qtable_Notes_String, .keep_all = TRUE)
 		distinct(Country_Code, Indicator_Code, Source_Code, Time, Sex_Code, Classif1_Code, Classif2_Code,  .keep_all = TRUE)
 		# distinct(ID)
-		
+test <- X %>% distinct(Country_Code)
+if(nrow(test) == 1 & unique(test$Country_Code) %in% 'CAN'){} else{		
 print(paste(Title,"Duplicates, plse check result on CHECK_DUPLICATE",sep=" "))
-data.table:::fwrite(TEST_DUPLICATE, paste0(mywd, 'ILO_Data/check/CHECK_DUPLICATE_',Title,'.csv'),na = '')
+data.table:::fwrite(TEST_DUPLICATE, paste0(mywd, 'ILO_Data/check/CHECK_DUPLICATE_combi_',Title,'.csv'),na = '')
+}
+rm(test)
 }
 # X <- X %>% 
 # 	select(-ID)  
@@ -135,7 +138,8 @@ if(nrow(X %>% filter(!Classif2_Code%in%"XXX_XXX_XXX"))>0){
 							filter(	Classif2_Code %in% unlist(c( test$COMPUTE[i],
 							unlist(str_split(as.character(test$VAR1[i]), ";")),
 							unlist(str_split(as.character(test$VAR2[i]), ";")))), 
-							!(Add_Repository %in% c('MICRO', 'EUROSTAT') & !str_sub(Time,5,5) %in% c('Q', 'M'))), 
+							!(Add_Repository %in% c('EUROSTAT') & !str_sub(Time,5,5) %in% c('Q', 'M')), 
+							!(Add_Repository %in% c('MICRO') )),   
 					test[i,],
 					"Classif2_Code") %>% {invisible(gc(reset = TRUE)); .})
 	}
@@ -153,7 +157,8 @@ for (i in 1:nrow(test)){
 					filter(	Classif1_Code %in% unlist(c( test$COMPUTE[i],
 							unlist(stringr::str_split(as.character(test$VAR1[i]), ";")),
 							unlist(stringr::str_split(as.character(test$VAR2[i]), ";")))), 
-							!(Add_Repository %in% c('MICRO', 'EUROSTAT') & !str_sub(Time,5,5) %in% c('Q', 'M'))), 
+							!(Add_Repository %in% c('EUROSTAT') & !str_sub(Time,5,5) %in% c('Q', 'M')), 
+							!(Add_Repository %in% c('MICRO') )),  
 					test[i,],
 					"Classif1_Code") %>% {invisible(gc(reset = TRUE)); .})
 }
@@ -261,23 +266,7 @@ test <- Ariane:::COMPUTE$INDICATOR_NB
 
 
 for (i in 1:nrow(test)){
-Drop_repo <- str_split(test[i, 'Drop'], ';') %>% unlist
-pass <- TRUE
-if(length(Drop_repo)==1){if(Drop_repo %in% NA) pass <- TRUE}
 
-	if(!pass){
-		X <- X %>% 
-			bind_rows(	plyDataIndicatorST(X  %>% 
-							filter(	Indicator_Code %in% unlist(c( test$COMPUTE[i],
-															unlist(stringr::str_split(as.character(test$VAR1[i]), ";")),
-															unlist(stringr::str_split(as.character(test$VAR2[i]), ";")))), 
-									!(str_sub(Indicator_Code,-2,-1)%in%"RT" | 
-									str_sub(Indicator_Code,1,3)%in%c("CPI","HOW","EAR")) ), 
-									test[i,]))  
-		invisible(gc(reset = TRUE))
-		invisible(gc(reset = TRUE))
-
-	} else {
 		X <- X %>% 
 			bind_rows(	plyDataIndicatorST(X  %>% 
 							filter(	Indicator_Code %in% unlist(c( test$COMPUTE[i],
@@ -285,14 +274,15 @@ if(length(Drop_repo)==1){if(Drop_repo %in% NA) pass <- TRUE}
 															unlist(stringr::str_split(as.character(test$VAR2[i]), ";")))),
 									!(str_sub(Indicator_Code,-2,-1)%in%"RT" | 
 									str_sub(Indicator_Code,1,3)%in%c("CPI","HOW","EAR")) , 
-									!(Add_Repository %in% Drop_repo & !str_sub(Time,5,5) %in% c('Q', 'M'))), 
+							!(Add_Repository %in% c('EUROSTAT') & !str_sub(Time,5,5) %in% c('Q', 'M')), 
+							!(Add_Repository %in% c('MICRO') )), 
 									test[i,])) 
 		invisible(gc(reset = TRUE))
 		invisible(gc(reset = TRUE))
-	}
+	
 }
 						
-rm(i, test, Drop_repo, pass)
+rm(i, test)
 invisible(gc(reset = TRUE))
 
 ################### test duplicate as micro is not process
@@ -549,7 +539,7 @@ X <- X %>%
 		checkDataEmptyST %>% 
 		checkDataRateST(mywd) %>% 	
 		filter(	as.character(Indicator_Code) %in% c(t(left_join(	Ariane:::CODE_ORA$T_CIN_COL_IND %>%  
-														filter(CIN_COLLECTION_ID %in% "2") %>% 
+														filter(COL_CODE %in% c('YI', 'STI')) %>% 
 														select(ID = CIN_INDICATOR_ID), 
 													select(Ariane:::CODE_ORA$T_IND_INDICATOR, ID = IND_ID, IND_CODE)
 												, by = "ID")["IND_CODE"])), 
@@ -561,17 +551,18 @@ invisible(gc(reset = TRUE))
 
 
 ##################### ADD OECD data from query
-REF_OECD <- c('518', '536', '2257', '147', '2253', '358', '2249', '2242', '2487', '2244', '2518', '2486', '2260', '2247', '2237', '772', '2255', '706', '2238', '259', '222', '2261', '463', '2236', '2250', '117', '2241', '2252', '120', '2254', '2519', '2256', '453', '595', '142', '138')
+REF_OECD <- c('AUS', 'AUT', 'CHE', 'COL', 'CZE', 'EST', 'FIN', 'FRA', 'HUN', 'ISL', 'ISR', 'JPN', 'KOR', 'MEX', 'NOR', 'NZL', 'POL', 'RUS', 'SVK', 'SWE', 'TUR', 'ZAF', 'CHL', 'CRI')
 
 
+if(unique(X$Country_Code) %in% REF_OECD){
 			
-IND_OECD <- c('UNE_TUNE_SEX_AGE_DUR_NB', 'EMP_TEMP_SEX_AGE_NB', 'EAP_TEAP_SEX_AGE_NB', 'POP_XWAP_SEX_AGE_NB', 'UNE_TUNE_SEX_AGE_NB', 'EAP_DWAP_SEX_AGE_RT', 'UNE_DEAP_SEX_AGE_RT', 'EMP_DWAP_SEX_AGE_RT', 'EMP_TEMP_SEX_STE_NB', 'EES_TEES_SEX_ECO_NB', 'EMP_TEMP_SEX_ECO_NB')
-test <- X %>% filter((!str_sub(Time,5,5) %in% c('Q','M') & Source_Code %in% REF_OECD & Indicator_Code %in% IND_OECD))
+IND_OECD <- c('EAP_DWAP_SEX_AGE_RT', 'EAP_TEAP_SEX_AGE_NB', 'EES_TEES_SEX_ECO_NB', 'EIP_DWAP_SEX_AGE_RT', 'EIP_TEIP_SEX_AGE_NB', 'EMP_DWAP_SEX_AGE_RT', 'EMP_TEMP_SEX_AGE_NB', 'EMP_TEMP_SEX_ECO_NB', 'EMP_TEMP_SEX_STE_NB', 'POP_XWAP_SEX_AGE_NB', 'UNE_DEAP_SEX_AGE_RT', 'UNE_TUNE_SEX_AGE_DUR_NB', 'UNE_TUNE_SEX_AGE_NB')
+test <- X %>% filter((!str_sub(Time,5,5) %in% c('Q','M') &  Indicator_Code %in% IND_OECD))
 
 
 if(nrow(test)>0){
 	# delete Annual data from Bulk
-	X <- X %>% filter(!(!str_sub(Time,5,5) %in% c('Q','M') & Source_Code %in% REF_OECD & Indicator_Code %in% IND_OECD))
+	X <- X %>% filter(!(!str_sub(Time,5,5) %in% c('Q','M') & Indicator_Code %in% IND_OECD))
 	cou <- unique(X$Country_Code)
 	# Upload eurostat Annual from Query
 	Y <- read_rds(paste0(ilo:::path$data, 'REP_OECD/LFS_ANNUAL/output/',cou,'.rds')) %>% mutate_all(funs(as.character)) %>%
@@ -580,7 +571,7 @@ if(nrow(test)>0){
 							classif1 = ifelse(classif1 %in% NA, 'XXX_XXX_XXX', classif1)		
 						) %>% arrange(classif1) %>%
 					select(ref_area, indicator, source, sex, sex_version, classif1, classif1_version, classif2, classif2_version, time, obs_value , obs_status, note_classif, note_source) %>% 
-					filter(indicator %in% IND_OECD, source %in% REF_OECD)
+					filter(indicator %in% IND_OECD)
 			
 colnames(Y) <- c("Country_Code",'Indicator_Code', "Source_Code","Sex_Code", 'Sex_Version_Code', "Classif1_Code", 'Classif1_Version_Code',"Classif2_Code", 'Classif2_Version_Code',"Time", "Value",'Value_Status_Code', 'Value_Notes_String', 'Qtable_Notes_String')
 
@@ -593,8 +584,8 @@ invisible(gc(reset = TRUE))
 # create key
 
 
-	test	 <- test 	%>% mutate(ID = paste0(Time, Source_Code, Indicator_Code, str_sub(Sex_Code,1,3), str_sub(Classif1_Code,1,3), str_sub(Classif2_Code,1,3))) %>% group_by(ID) %>% mutate(n = n()) %>% ungroup
-	Y 		<- 	Y 		%>% mutate(ID = paste0(Time, Source_Code, Indicator_Code, str_sub(Sex_Code,1,3), str_sub(Classif1_Code,1,3), str_sub(Classif2_Code,1,3))) %>% group_by(ID) %>% mutate(n = n()) %>% ungroup
+	test	 <- test 	%>% mutate(ID = paste0(Source_Code, Time,  Indicator_Code, str_sub(Sex_Code,1,3), str_sub(Classif1_Code,1,3), str_sub(Classif2_Code,1,3))) %>% group_by(ID) %>% mutate(n = n()) %>% ungroup
+	Y 		<- 	Y 		%>% mutate(ID = paste0(Source_Code, Time,  Indicator_Code, str_sub(Sex_Code,1,3), str_sub(Classif1_Code,1,3), str_sub(Classif2_Code,1,3))) %>% group_by(ID) %>% mutate(n = n()) %>% ungroup
 	# delete from bulk existing indicator from eurostat query
 	
 	ref <- full_join( 	Y %>% distinct(ID, n) %>% select(ID, oecd = n), 
@@ -606,28 +597,17 @@ invisible(gc(reset = TRUE))
 	
 	Y <- Y %>% select(-n) %>% left_join(ref, by = 'ID')  %>% filter(PASS %in% 'oecd') 
 	
-	test <- test %>% select(-n) %>%  left_join(Y %>% distinct(Country_Code, Source_Code, Indicator_Code,Time, PASS ), by = c("Country_Code", "Source_Code", "Indicator_Code", "Time")) %>% filter(!PASS %in% 'oecd')
+	test <- test %>% select(-n) %>%  left_join(Y %>% distinct(Country_Code,  Source_Code,  Indicator_Code,Time, PASS ), by = c("Country_Code", 'Source_Code',"Indicator_Code", "Time")) %>% filter(!PASS %in% 'oecd')
 
 	X <- bind_rows(X,Y, test) %>% select(-ID)
 	rm(cou, Y, ref)
 	invisible(gc(reset = TRUE))
 }
-rm(test, REF_OECD, IND_OECD)
+rm(test, IND_OECD)
 invisible(gc(reset = TRUE))
-
-##################### !ADD eurostat data from query
-
-		
-############# clean up Value_Status_Code 
-
-X <- X %>% 
-		mutate(	Value = ifelse(Value_Status_Code %in% 'S', as.character(NA), Value), 
-				 Value_Status_Code = ifelse(Value_Status_Code %in% 'S', 'U', Value_Status_Code)) 
-invisible(gc(reset = TRUE))
-					
-					
-					
-					
+	
+}
+rm(REF_OECD)					
 					
 ################################## end by year
 		
@@ -687,8 +667,33 @@ X <- X %>% 	rename(Survey_Id = Source_Code) %>%
 		filter(!(indicator %in% c("UNE_TUNE_SEX_OCU_NB", "UNE_TUNE_SEX_ECO_NB") & str_sub(source,1,2) %in% c('FA','FB','FX','BE'))) %>%
 		filter(!(str_detect(source, 'BE') & str_sub(time, 5,5) %in% c('Q', ''))) 
 		
+################################# reduce scope
 
+		
+############# clean up Value_Status_Code 
 
+X <- X %>% 
+		mutate(	obs_value = ifelse(obs_status %in% 'S', as.character(NA), obs_value), 
+				 obs_status = ifelse(obs_status %in% 'S', 'U', obs_status), 
+				 obs_value  = as.numeric(obs_value)) 
+invisible(gc(reset = TRUE))
+					
+					
+
+TEST_FRAMEWORK <- ilo_tpl %>% select(Is_Validate, indicator, sex_version = sex_var, classif1_version =  classif1_var , classif2_version = classif2_var, frequency) %>%   filter(Is_Validate %in% 'TRUE') %>%
+				mutate(frequency = str_split(frequency, pattern = ';') %>% as.list) %>% unnest %>% distinct %>%
+				mutate(frequency = ifelse(frequency %in% 'A', '', frequency)) %>% mutate(freq_OK = 1) 
+TEST_FRAMEWORK_indicator <- TEST_FRAMEWORK %>% distinct(indicator) %>% mutate(ind_OK = 1) 				
+				
+X <-  X %>% 	mutate(frequency = str_sub(time, 5,5)) %>% 
+				left_join(TEST_FRAMEWORK, by = c("indicator", 'frequency', 'sex_version', 'classif1_version', 'classif2_version')) %>%
+				left_join(TEST_FRAMEWORK_indicator, by = 'indicator') %>% 
+				filter(ind_OK %in% NA | freq_OK %in% 1) %>% select(-frequency, -Is_Validate, -freq_OK, -ind_OK)
+				
+rm(TEST_FRAMEWORK, TEST_FRAMEWORK_indicator )
+				
+				
+				
 #########################################################################
 ############# TEST Distribution 'full'
 #########################################################################
