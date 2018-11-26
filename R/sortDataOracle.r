@@ -16,11 +16,11 @@ X  %>%
 																					arrange(as.numeric(COUNTRY_SORT)) %>% 
 																					select(Country_Code = COU_ISO3_CODE) %>% t %>% as.character
 												), 
-					Source_Code 			= factor(Source_Code, 			select(Ariane:::CODE_ORA$T_SRC_SOURCE, SRC_CODE,SRC_SORT) %>% 
-																					filter(SRC_CODE %in% levels(as.factor(X$Source_Code))) %>% 
-																					arrange(as.numeric(SRC_SORT)) %>% 
-																					select(Source_Code = SRC_CODE) %>% t %>% as.character
-												),
+					# Source_Code 			= factor(Source_Code, 			select(Ariane:::CODE_ORA$T_SRC_SOURCE, SRC_CODE,SRC_SORT) %>% 
+																					# filter(SRC_CODE %in% levels(as.factor(X$Source_Code))) %>% 
+																					# arrange(as.numeric(SRC_SORT)) %>% 
+																					# select(Source_Code = SRC_CODE) %>% t %>% as.character
+												# ),
 					Survey_Id				= factor(Survey_Id, 			select(Ariane:::CODE_ORA$T_SUR_SURVEY, SUR_ID,SUR_SORT) %>% 
 																					filter(SUR_ID %in% levels(as.factor(X$Survey_Id))) %>% 
 																					arrange(as.numeric(SUR_SORT)) %>% 
@@ -73,7 +73,7 @@ X  %>%
 												)
 				) %>% 	
 			arrange(	Country_Code, 
-						Source_Code, 
+						#Source_Code, 
 						Survey_Id, 
 						Collection_Code, 
 						Indicator_Code, 
@@ -95,7 +95,11 @@ X  %>%
 
 #' @export
 
-sortDataOracle_NEW <- function(X, Lang = "EN"){
+sortDataOracle_NEW <- function(X, Lang = "EN", drop = NULL){
+
+keep <- paste0(colnames(X), collapse = '/')  #"collection/ref_area/source/indicator/sex/classif1/classif2/time"
+
+if(!is.null(drop)) {for (i in 1:length(drop)) {keep <- gsub(drop[i], '', keep, fixed = TRUE)}} 
 
 require(ilo)
 init_ilo(-cl)
@@ -105,83 +109,109 @@ X <- X  %>% 		switch_ilo(version)  %>%
 								Survey_Id = str_sub(source, 4,-1))
 					
 			
-			
-X  %>% mutate(		ref_area 			= factor(ref_area, 			select(Ariane:::CODE_ORA$T_COU_COUNTRY, COU_ISO3_CODE,COUNTRY_SORT = COU_SORT_EN) %>% 
+if(str_detect(keep, 'ref_area')){
+X <- X  %>% mutate(		ref_area 			= factor(ref_area, 			select(Ariane:::CODE_ORA$T_COU_COUNTRY, COU_ISO3_CODE,COUNTRY_SORT = COU_SORT_EN) %>% 
 																					filter(COU_ISO3_CODE %in% levels(as.factor(X$ref_area))) %>% 
 																					arrange(as.numeric(COUNTRY_SORT)) %>% 
 																					select(ref_area = COU_ISO3_CODE) %>% t %>% as.character
-												), 
-					Source_Code 			= factor(Source_Code, 			select(Ariane:::CODE_ORA$T_SRC_SOURCE, SRC_CODE,SRC_SORT) %>% 
-																					filter(SRC_CODE %in% levels(as.factor(X$Source_Code))) %>% 
-																					arrange(as.numeric(SRC_SORT)) %>% 
-																					select(Source_Code = SRC_CODE) %>% t %>% as.character
-												),
-					Survey_Id				= factor(Survey_Id, 			select(Ariane:::CODE_ORA$T_SUR_SURVEY, SUR_ID,SUR_SORT) %>% 
+												))
+}
+if(str_detect(keep, 'source')){											 
+# X <- X  %>% mutate(		Source_Code 			= factor(Source_Code, 			select(Ariane:::CODE_ORA$T_SRC_SOURCE, SRC_CODE,SRC_SORT) %>% 
+																					# filter(SRC_CODE %in% levels(as.factor(X$Source_Code))) %>% 
+																					# arrange(as.numeric(SRC_SORT)) %>% 
+																					# select(Source_Code = SRC_CODE) %>% t %>% as.character
+												# ))
+												
+X <- X  %>% mutate(		Survey_Id				= factor(Survey_Id, 			select(Ariane:::CODE_ORA$T_SUR_SURVEY, SUR_ID,SUR_SORT) %>% 
 																					filter(SUR_ID %in% levels(as.factor(X$Survey_Id))) %>% 
 																					arrange(as.numeric(SUR_SORT)) %>% 
 																					select(Survey_Id = SUR_ID) %>% t %>% as.character
-												),
-					collection 		= factor(collection, 		select(Ariane:::CODE_ORA$T_COL_COLLECTION, COL_CODE,COL_ID) %>% 
+												))
+}	
+if(str_detect(keep, 'collection')){												
+X <- X  %>% mutate(		collection 		= factor(collection, 		select(Ariane:::CODE_ORA$T_COL_COLLECTION, COL_CODE,COL_ID) %>% 
 																					filter(COL_CODE %in% levels(as.factor(X$collection))) %>% 
 																					arrange(as.numeric(COL_ID)) %>% 
 																					select(collection = COL_CODE) %>% t %>% as.character
-												),
-					#indicator 			= factor(indicator, 		select(Ariane:::CODE_ORA$T_IND_INDICATOR, IND_CODE,IND_SORT) %>% 
-					#																filter(IND_CODE %in% levels(as.factor(X$indicator))) %>% 
-					#																arrange(IND_SORT) %>% 
-					#																select(indicator = IND_CODE) %>% t %>% as.character
-					#							),
-					sex_version 		= factor(sex_version, 		select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
+												))
+}
+if(str_detect(keep, 'indicator')){
+X <- X  %>% mutate(		indicator 			= factor(indicator, 		select(Ariane:::CODE_ORA$T_IND_INDICATOR, IND_CODE,IND_SORT) %>% 
+																					filter(IND_CODE %in% levels(as.factor(X$indicator))) %>% 
+																					arrange(IND_SORT) %>% 
+																					select(indicator = IND_CODE) %>% t %>% as.character
+												))
+}
+if(str_detect(keep, 'sex')){
+X <- X  %>% mutate(		sex_version 		= factor(sex_version, 		select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
 																					filter(CLV_CODE %in% levels(as.factor(X$sex_version))) %>% 
 																					arrange(as.numeric(CLV_SORT)) %>% 
 																					select(sex_version = CLV_CODE) %>% t %>% as.character
-												),
-					classif1_version 	= factor(classif1_version, select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
-																					filter(CLV_CODE %in% levels(as.factor(X$classif1_version))) %>% 
-																					arrange(as.numeric(CLV_SORT)) %>% 
-																					select(classif1_version = CLV_CODE) %>% t %>% as.character
-												),
-					classif2_version 	= factor(classif2_version, select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
-																					filter(CLV_CODE %in% levels(as.factor(X$classif2_version))) %>% 
-																					arrange(as.numeric(CLV_SORT)) %>% 
-																					select(classif2_version = CLV_CODE) %>% t %>% as.character
-												),
-					time 					= factor(time, 					select(Ariane:::CODE_ORA$T_TIM_TIME, TIM_FORMAT_USER,TIM_ID) %>% 
-																					filter(TIM_FORMAT_USER %in% levels(as.factor(X$time))) %>% 
-																					arrange(as.numeric(TIM_ID)) %>% 
-																					select(time = TIM_FORMAT_USER) %>% t %>% as.character
-												),
-					sex 				= factor(sex, 				select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
+												))
+X <- X  %>% mutate(		sex 				= factor(sex, 				select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
 																					filter(CLA_CODE %in% levels(as.factor(X$sex))) %>% 
 																					arrange(as.numeric(CLA_SORT)) %>% 
 																					select(sex = CLA_CODE) %>% t %>% as.character
-												),
-					classif1 			= factor(classif1, 		select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
+												))
+}
+if(str_detect(keep, 'classif1')){
+X <- X  %>% mutate(		classif1_version 	= factor(classif1_version, select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
+																					filter(CLV_CODE %in% levels(as.factor(X$classif1_version))) %>% 
+																					arrange(as.numeric(CLV_SORT)) %>% 
+																					select(classif1_version = CLV_CODE) %>% t %>% as.character
+												))
+X <- X  %>% mutate(		classif1 			= factor(classif1, 		select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
 																					filter(CLA_CODE %in% levels(as.factor(X$classif1))) %>% 
 																					arrange(as.numeric(CLA_SORT)) %>% 
 																					select(classif1 = CLA_CODE) %>% t %>% as.character
-												),
-					classif2 			= factor(classif2, 		select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
+												))
+}
+if(str_detect(keep, 'classif2')){
+X <- X  %>% mutate(		classif2_version 	= factor(classif2_version, select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
+																					filter(CLV_CODE %in% levels(as.factor(X$classif2_version))) %>% 
+																					arrange(as.numeric(CLV_SORT)) %>% 
+																					select(classif2_version = CLV_CODE) %>% t %>% as.character
+												))
+X <- X  %>% mutate(		classif2 			= factor(classif2, 		select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
 																					filter(CLA_CODE %in% levels(as.factor(X$classif2))) %>% 
 																					arrange(as.numeric(CLA_SORT)) %>% 
 																					select(classif2 = CLA_CODE) %>% t %>% as.character
-												)
-				) %>% 	
-			arrange(	ref_area, 
-						Source_Code, 
-						Survey_Id, 
-						collection, 
-						indicator, 
-						sex_version, 
-						classif1_version, 
-						classif2_version,  
-						time, 
-						sex, 
-						classif1, 
-						classif2
-				 )  %>%
-			mutate(	source = paste0(Source_Code, ':',Survey_Id)) %>% select(-contains('_version'), -Source_Code, -Survey_Id)
+												))
 }
+if(str_detect(keep, 'time')){
+X <- X  %>% mutate(		time 					= factor(time, 					select(Ariane:::CODE_ORA$T_TIM_TIME, TIM_FORMAT_USER,TIM_ID) %>% 
+																					filter(TIM_FORMAT_USER %in% levels(as.factor(X$time))) %>% 
+																					arrange(as.numeric(TIM_ID)) %>% 
+																					select(time = TIM_FORMAT_USER) %>% t %>% as.character
+												))
+}
+
+
+invisible(gc(reset = TRUE))
+if(str_detect(keep, 'classif2')){ X <- X %>% arrange(classif2)}
+if(str_detect(keep, 'classif1')){ X <- X %>% arrange(classif1)}
+if(str_detect(keep, 'sex')){ X <- X %>% arrange(sex)}
+if(str_detect(keep, 'time')){ X <- X %>% arrange(time)}
+if(str_detect(keep, 'classif2_version')){ X <- X %>% arrange(classif2)}
+if(str_detect(keep, 'classif1_version')){ X <- X %>% arrange(classif1)}
+if(str_detect(keep, 'sex_version')){ X <- X %>% arrange(sex)}
+if(str_detect(keep, 'indicator')){ X <- X %>% arrange(indicator)}
+
+if(str_detect(keep, 'source')){ X <- X %>% arrange( Survey_Id)} # arrange(Source_Code, Survey_Id)}
+if(str_detect(keep, 'ref_area')){ X <- X %>% arrange(ref_area)}
+if(str_detect(keep, 'collection')){ X <- X %>% arrange(collection)}
+invisible(gc(reset = TRUE))
+if(str_detect(keep, 'source')){X <- X  %>%	mutate(	source = paste0(Source_Code, ':',Survey_Id)) %>% select(-Source_Code, -Survey_Id) %>% as.tbl}
+if(str_detect(keep, 'sex|classif1|classif2')){ X <- X %>% select(-contains('_version'))}
+
+invisible(gc(reset = TRUE))
+invisible(gc(reset = TRUE))
+
+X
+
+}
+
 
 #' @export
 

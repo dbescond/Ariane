@@ -4,8 +4,8 @@
 \alias{compare_raw_data}
 \title{Compare STI ORA}
 \usage{
-compare_raw_data(ref_collection = "STI", ref_area = NULL,
-  freq_code = c("A", "Q", "M"))
+compare_raw_data(ref_collection = "STI", ref_ref_area = NULL,
+  ref_freq_code = c("Q", "M"))
 }
 \arguments{
 \item{ref_collection}{select your collection.}

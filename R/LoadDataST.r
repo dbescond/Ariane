@@ -60,7 +60,7 @@ for (i in 1:length(ReadMe$PATH)){
 		X <- X[,names(HEADER_TS)%in%colnames(X)]
 
 		X <- X %>% 	
-				mutate_all(funs(mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>% 
+				mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>% 
 				reshapeDataLongFormatST
 		X <- X[,colnames(X)%in%colnames(HEADER_CL)]
 		colnames(X) <- new_col[match(colnames(X), new_col$Header), "NEW"] %>% t %>% c
@@ -82,7 +82,7 @@ for (i in 1:length(ReadMe$PATH)){
 		}
 		X <- X 	%>% 
 			select(-ID) %>% 
-			mutate_all(funs(mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>% 
+			mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>% 
 			mutate(		Add_Status 	= as.character(ifelse(Add_Status %in% NA,"M",Add_Status)),
 						Sex_Code	= ifelse(Sex_Code %in% c("T","F","M"),paste("SEX",Sex_Code,sep="_"),Sex_Code),
 						Sex_Code    = as.character(gsub("_X_","_",Sex_Code,fixed = TRUE)),
@@ -121,7 +121,7 @@ for (i in 1:length(ReadMe$PATH)){
 
 		X <- X %>% 	
 				mutate_all(funs(as.character) ) %>%
-				mutate_all(funs(mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) #clean fack or bad value
+				mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) #clean fack or bad value
 
 		X <- bind_rows(HEADER_CL,as.tbl(X))[-c(1),]
 		X <- X[,colnames(X)%in%colnames(HEADER_CL)]
@@ -168,7 +168,7 @@ for (i in 1:length(ReadMe$PATH)){
 		
 		
 		X <- X %>% mutate(IND_CODE = paste0(str_sub(indicator, 1, 9), str_sub(indicator,-2,-1))) %>% left_join(
-						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% c('STI', 'YI')) %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
+						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% c('STI', 'YI', 'ILOEST', 'YTH', 'MIG', 'ILMS', 'SDG')) %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
 						, by = 'IND_CODE') %>% 
 					mutate(check = ifelse(indicator %in% c('EES_T9ES_NB','EMP_T9MP_NB','HOW_T9MP_NB','HOW_X9ES_NB'), 1,check )) %>%
 					filter(check %in% 1) %>% select(-check)

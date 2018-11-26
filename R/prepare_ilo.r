@@ -17,7 +17,7 @@ e <- new.env()
 
 
 	for (i in 1:length(cou)){
-		X <- eval(parse(text=paste(c(paste0("readRDS('",paste0(ilo:::path$sys, 'ILO_Data/ORA/', cou[i],'_',FREQ, '.rds'),"')"), query), collapse=" %>% "))) %>%
+		X <- readRDS(paste0(ilo:::path$sys, 'ILO_Data/ORA/',query, '_', cou[i],'_',FREQ, '.rds'))%>%
 				mutate_all(funs(as.character))%>%
 				mutate(obs_value = as.numeric(obs_value)) %>%
 				select(-sex_version, -classif1_version,	-classif2_version)
@@ -28,7 +28,7 @@ e <- new.env()
 		if(nrow(X)>0){	
 	 
 			X <- X  %>% 
-				select(source, indicator, sex:obs_status, note_classif, note_indicator, note_source, info)
+				select(source, indicator, sex:obs_status, note_classif, note_indicator, note_source, info) 
 					
 			if(!FREQ %in% c('M','Q') ){
 					X <- X %>% mutate(time = as.numeric(time))
@@ -72,7 +72,7 @@ e <- new.env()
 
 DB <- NULL
 	for (i in 1:length(cou)){
-		X <- eval(parse(text=paste(c(paste0("readRDS('",paste0(ilo:::path$sys, 'ILO_Data/ORA/', cou[i],'_',FREQ, '.rds'),"')"), query), collapse=" %>% "))) %>%
+		X <- readRDS(paste0(ilo:::path$sys, 'ILO_Data/ORA/',query, '_', cou[i],'_',FREQ, '.rds'))%>%
 				mutate_all(funs(as.character))%>%
 				mutate(obs_value = as.numeric(obs_value)) %>%
 				select(-sex_version, -classif1_version,	-classif2_version)

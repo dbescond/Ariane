@@ -78,6 +78,7 @@ for (i in 1:length(meta)){
  
 dbDisconnect(ch)
 
+CODE_ORA$T_IND_INDICATOR <- CODE_ORA$T_IND_INDICATOR %>% mutate(test = nchar(IND_CODE)) %>% filter(!test %in% 27, !IND_CODE %in% NA) %>% select(-test)
 
 CODE_ORA$T_USR_USER 		<- as.tbl(as.data.frame(read.csv(paste0(wd, "help/T_USR_USER.csv"),header = TRUE,sep=",", stringsAsFactors=FALSE))) %>% 
 												mutate_all(funs(as.character) ) %>%
@@ -135,7 +136,8 @@ CODE_ORA$T_CIC_COL_IND_CLV <- CODE_ORA$T_CIC_COL_IND_CLV %>%
 						left_join(select(CODE_ORA$T_CIN_COL_IND, CIC_COLLECTION_ID = CIN_COLLECTION_ID, CIC_INDICATOR_ID = CIN_INDICATOR_ID, CIC_CIN_ID  = CIN_ID), by ="CIC_CIN_ID") %>%
 						left_join(select(CODE_ORA$T_COL_COLLECTION, CIC_COLLECTION_ID = COL_ID , CIC_COLLECTION_CODE = COL_CODE), by ="CIC_COLLECTION_ID") %>%
 						left_join(select(CODE_ORA$T_IND_INDICATOR, CIC_INDICATOR_ID = IND_ID , CIC_INDICATOR_CODE = IND_CODE), by ="CIC_INDICATOR_ID") %>%
-						left_join(select(CODE_ORA$T_CLV_CLASSIF_VERSION, CIC_CLASSIF_VERSION_ID = CLV_ID , CIC_CLASSIF_VERSION_CODE = CLV_CODE), by ="CIC_CLASSIF_VERSION_ID") 
+						left_join(select(CODE_ORA$T_CLV_CLASSIF_VERSION, CIC_CLASSIF_VERSION_ID = CLV_ID , CIC_CLASSIF_VERSION_CODE = CLV_CODE), by ="CIC_CLASSIF_VERSION_ID") %>% 
+						mutate(test = nchar(CIC_INDICATOR_CODE)) %>% filter(!test %in% 27, !CIC_INDICATOR_CODE %in% NA) %>% select(-test)
 
 
 CODE_ORA$T_IND_INDICATOR <- CODE_ORA$T_IND_INDICATOR %>%
@@ -156,7 +158,8 @@ CODE_ORA$T_SRC_SOURCE <- CODE_ORA$T_SRC_SOURCE %>%
 						left_join(select(CODE_ORA$T_SGR_SRC_GROUP, SRC_GROUP_ID = SGR_ID , SRC_GROUP_CODE = SGR_CODE ), by = "SRC_GROUP_ID") 		
 																																							
 CODE_ORA$T_CIN_COL_IND <- CODE_ORA$T_CIN_COL_IND %>% left_join(select(CODE_ORA$T_COL_COLLECTION, CIN_COLLECTION_ID =COL_ID, COL_CODE), by = 'CIN_COLLECTION_ID') %>% 
-					left_join(select(CODE_ORA$T_IND_INDICATOR, CIN_INDICATOR_ID = IND_ID, IND_CODE), by = 'CIN_INDICATOR_ID')
+					left_join(select(CODE_ORA$T_IND_INDICATOR, CIN_INDICATOR_ID = IND_ID, IND_CODE), by = 'CIN_INDICATOR_ID')%>% 
+						mutate(test = nchar(IND_CODE)) %>% filter(!test %in% 27, !IND_CODE %in% NA) %>% select(-test)
 
 																																		
 																																		

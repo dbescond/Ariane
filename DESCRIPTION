@@ -9,5 +9,5 @@ Description: internal tools to process and manipulate data for the ILO Statistic
 Depends: 
     R (>= 3.3.3)
 License: MIT
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 VignetteBuilder: knitr
