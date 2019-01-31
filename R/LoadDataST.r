@@ -160,6 +160,7 @@ for (i in 1:length(ReadMe$PATH)){
 			
 			X <- X %>% switch_ilo(version)
 			X <- X %>% 	mutate(frequency = str_sub(time, 5,5)) %>% left_join(TEST_FRAMEWORK, by = c("indicator", 'frequency', 'sex_version', 'classif1_version', 'classif2_version')) %>%
+				mutate(Is_Validate  = ifelse(indicator %in% 'IFL_4IEM_SEX_ECO_IFL_NB', 'TRUE', Is_Validate)) %>%
 				filter(Is_Validate %in% 'TRUE') %>% 
 				filter(!(as.numeric(table_test) > 0.3339 & as.numeric(benchmark) == 1) ) %>% select(-contains('Is_Validate'), -contains('frequency'), -contains('sample_count'), -contains('table_test'), -contains('ilo_wgt'), -contains("benchmark") )
 	
@@ -168,7 +169,7 @@ for (i in 1:length(ReadMe$PATH)){
 		
 		
 		X <- X %>% mutate(IND_CODE = paste0(str_sub(indicator, 1, 9), str_sub(indicator,-2,-1))) %>% left_join(
-						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% c('STI', 'YI', 'ILOEST', 'YTH', 'MIG', 'ILMS', 'SDG')) %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
+						Ariane:::CODE_ORA$T_CIN_COL_IND %>% filter(COL_CODE %in% c('STI', 'YI', 'ILOEST', 'YTH', 'KI', 'ILMS', 'SDG')) %>%  mutate(IND_CODE = paste0(str_sub(IND_CODE, 1, 9), str_sub(IND_CODE,-2,-1))) %>% distinct(IND_CODE) %>% mutate(check = 1)
 						, by = 'IND_CODE') %>% 
 					mutate(check = ifelse(indicator %in% c('EES_T9ES_NB','EMP_T9MP_NB','HOW_T9MP_NB','HOW_X9ES_NB'), 1,check )) %>%
 					filter(check %in% 1) %>% select(-check)

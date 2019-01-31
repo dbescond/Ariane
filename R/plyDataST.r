@@ -14,7 +14,7 @@ plyDataST <- function(Title, ReadMe, mywd, ilo_tpl){
 Title <- unlist(Title)
 
 
-# Title <- "AGO"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys; ilo_tpl <- ilo_tpl$Mapping_indicator
+# Title <- "ALB"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys; ilo_tpl <- ilo_tpl$Mapping_indicator
 KEY_ORACLE 	<- c("Country_Code","Indicator_Code","Source_Code","Sex_Version_Code","Classif1_Version_Code","Classif2_Version_Code","Time","Sex_Code","Classif1_Code","Classif2_Code", "Value","Value_Status_Code","Currency_Code","Value_Notes_String","Qtable_Notes_String")
 key_QTA <- KEY_ORACLE[1:7] ; key_ALL <- KEY_ORACLE[1:10]
 statistics <- c(Collected_manual 	= 0, 
@@ -168,7 +168,7 @@ for (i in 1:nrow(test)){
 }
 rm(test)
 invisible(gc(reset = TRUE))	
-X <- X %>% 	filter(!(str_sub(Indicator_Code,1,3)%in%c("POP","EAP","EIP") & str_sub(Classif1_Code,1,3) %in% c("ECO", "OCU"))) %>% 
+X <- X %>% 	filter(!(str_sub(Indicator_Code,1,3)%in%c("POP","EAP","EIP") & str_sub(Classif1_Code,1,3) %in% c("ECO", 'STE', "OCU"))) %>% 
 			filter(!(Classif1_Code %in% "XXX_XXX_XXX" & !Classif2_Code %in% "XXX_XXX_XXX")) %>% 
 			filter(!str_sub(Classif2_Code,1,3) %in% 'AGE') %>% 
 			mutate(test = ifelse(!Classif1_Code %in% 'XXX_XXX_XXX' & Classif1_Code == Classif2_Code, 1, 0)) %>% 
@@ -215,7 +215,7 @@ invisible(gc(reset = TRUE))
 
 
 													
-ind_ref <- Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c("STI", 'YI', 'MIG', 'YTH', 'ILOEST', 'ILMS', 'SDG')) %>%
+ind_ref <- Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c("STI", 'YI', 'KI', 'YTH', 'ILOEST', 'ILMS', 'SDG')) %>%
 		distinct(CIC_INDICATOR_CODE) %>% mutate(class = str_sub(CIC_INDICATOR_CODE, 10,-4)) %>% 
 		distinct %>% 
 		separate(class, c('sex_test','classif1_test','classif2_test'), sep = '_', fill = 'right', extra = 'drop') %>% 
@@ -497,7 +497,7 @@ invisible(gc(reset = TRUE))
 
 
 # TEST version on STI for quarterly and monthly data
-TEST_STI <- Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c("STI", 'YI', 'MIG', 'YTH', 'ILOEST', 'ILMS', 'SDG')) 
+TEST_STI <- Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c("STI", 'YI', 'KI', 'YTH', 'ILOEST', 'ILMS', 'SDG')) 
 test_version_STI <- TEST_STI %>% mutate(TEST = paste0(CIC_INDICATOR_CODE, "/", CIC_CLASSIF_VERSION_CODE)) %>% select(TEST) %>% distinct(TEST) %>% t %>% c  
 test_version_STI <- c(test_version_STI, paste(TEST_STI$CIC_INDICATOR_CODE, "NA", sep = "/"))
 test_version_STI <- gsub('/NOC', '/NOC_VALUE',test_version_STI)
@@ -547,7 +547,7 @@ X <- X %>%
 		checkDataEmptyST %>% 
 		checkDataRateST(mywd) %>% 	
 		filter(	as.character(Indicator_Code) %in% c(t(left_join(	Ariane:::CODE_ORA$T_CIN_COL_IND %>%  
-														filter(COL_CODE %in% c('YI', 'STI', 'MIG', 'YTH', 'ILOEST', 'ILMS', 'SDG')) %>% 
+														filter(COL_CODE %in% c('YI', 'STI', 'KI', 'YTH', 'ILOEST', 'ILMS', 'SDG')) %>% 
 														select(ID = CIN_INDICATOR_ID), 
 													select(Ariane:::CODE_ORA$T_IND_INDICATOR, ID = IND_ID, IND_CODE)
 												, by = "ID")["IND_CODE"])), 
@@ -751,7 +751,7 @@ statistics["Migration"] <- nrow(X)
 
 
 	test_collection <- bind_rows( 
-							Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c('YI', 'MIG', 'YTH', 'ILOEST', 'ILMS', 'SDG')) %>% select(collection = CIC_COLLECTION_CODE, indicator = CIC_INDICATOR_CODE) %>% distinct %>% mutate(freq_code = 'A'),
+							Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c('YI', 'KI', 'YTH', 'ILOEST', 'ILMS', 'SDG')) %>% select(collection = CIC_COLLECTION_CODE, indicator = CIC_INDICATOR_CODE) %>% distinct %>% mutate(freq_code = 'A'),
 							Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c('STI')) %>% select(collection = CIC_COLLECTION_CODE, indicator = CIC_INDICATOR_CODE) %>% distinct %>% mutate(freq_code = 'Q'),
 							Ariane:::CODE_ORA$T_CIC_COL_IND_CLV %>% filter(CIC_COLLECTION_CODE %in% c('STI')) %>% select(collection = CIC_COLLECTION_CODE, indicator = CIC_INDICATOR_CODE) %>% distinct %>% mutate(freq_code = 'M')
 							)
@@ -783,7 +783,9 @@ statistics["Migration"] <- nrow(X)
 					filter(!(ref_area %in% 'SGP' & source %in% 'BA:5873' & str_detect(note_source, 'R1:3902') & as.numeric(time) >2016) )	%>% 		
 					filter(!(ref_area %in% 'BLZ' & source %in% 'BA:934' & str_detect(note_source, 'R1:3902') & str_detect(time, '2017') ))	%>% 		
 					filter(!(ref_area %in% 'BRB' & source %in% 'BA:338' & str_detect(note_source, 'R1:3902') & str_detect(indicator, 'EAP_TEAP') ))	%>% 		
+					filter(!(ref_area %in% 'MYS' & source %in% 'BA:544' & str_detect(note_source, 'R1:3902') & str_detect(indicator, '_DT') ))	%>% 		
 					filter(!(ref_area %in% 'ARM' & source %in% 'BB:173' & str_detect(note_source, 'R1:3902')))	%>% 
+					mutate(indicator = gsub('MST_XWAP_SEX_AGE_', 'MST_TPOP_SEX_AGE_', indicator)) %>%
 					saveRDS(., file = paste0(ilo:::path$sys, 'ILO_Data/STI/',ref$collection[i],'_',Title,'_',ref$freq_code[i],'.rds'))
 			
 			X <- X %>% filter(!(freq_code %in% ref$freq_code[i] & collection %in% ref$collection[i]))
@@ -807,31 +809,6 @@ statistics["Migration"] <- nrow(X)
 	
 	}
 
-	# if(!length(test[test %in% 'A'] %in% 'A') == 0) {
-		# saveRDS(	X %>% filter(freq_code %in% 'A') %>%
-					# filter(!(ref_area %in% 'ALB' & source %in% 'BA:480' & str_detect(note_source, 'R1:3903') & str_sub(indicator, -3,-1) %in% '_RT')) %>% 
-					# filter(!(ref_area %in% c('ALB', 'AZE', 'BHS', 'BLZ', 'BRB', 'CHL','CUB', 'HKG',  'IRN','KAZ', 'KGZ', 'LKA','LVA', 'MAR', 'MDA', 'MYS', 'QAT', 'SGP', 'SUR','SAU', 'SYR','THA', 'TTO', 'VEN') 
-								# & str_sub(source,1,2) %in% 'BA' 
-								# & str_detect(note_source, 'R1:3902') 
-								# & str_sub(indicator, -3,-1) %in% c('_RT', '_DT'))) %>% 
-					# filter(!(ref_area %in% 'BRA' & source %in% 'BA:3047'))	%>%		
-					# filter(!(ref_area %in% 'SMR' & source %in% 'EA:5918' & str_detect(note_source, 'R1:3902') & str_sub(indicator, -3,-1) %in% c('_RT', '_DT')))	%>% 		
-					# filter(!(ref_area %in% 'SGP' & source %in% 'BA:5873' & str_detect(note_source, 'R1:3902') & as.numeric(time) >2016) )	%>% 		
-					# filter(!(ref_area %in% 'BLZ' & source %in% 'BA:934' & str_detect(note_source, 'R1:3902') & str_detect(time, '2017') ))	%>% 		
-					# filter(!(ref_area %in% 'BRB' & source %in% 'BA:338' & str_detect(note_source, 'R1:3902') & str_detect(indicator, 'EAP_TEAP') ))	%>% 		
-					# filter(!(ref_area %in% 'ARM' & source %in% 'BB:173' & str_detect(note_source, 'R1:3902')))			
-								
-					# ,file = paste0(ilo:::path$sys, 'ILO_Data/STI/',Title,"_A.rds"))
-	# }	
-	# if(!length(test[test %in% 'Q'] %in% 'Q') == 0) {
-		# saveRDS(	X %>% filter(freq_code %in% 'Q') 
-					# ,file = paste0(ilo:::path$sys, 'ILO_Data/STI/',Title,"_Q.rds"))
-	# }
-	# if(!length(test[test %in% 'M'] %in% 'M') == 0) {
-		# saveRDS(	X %>% filter(freq_code %in% 'M') 
-					# ,file = paste0(ilo:::path$sys, 'ILO_Data/STI/',Title,"_M.rds"))
-	# }	
-	
 	rm(X, key_ALL, KEY_ORACLE, key_QTA, mywd,test_collection, ref)
 	invisible(gc(reset = TRUE))
 	invisible(gc(reset = TRUE))

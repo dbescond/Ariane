@@ -195,7 +195,21 @@ CODE_ORA$T_AGY_AGENCY <- CODE_ORA$T_AGY_AGENCY %>%
 							left_join(select(CODE_ORA$T_CLT_CODELIST %>% filter(CLT_COLUMN_NAME %in% "AGENCY_TYPE"), AGY_TYPE_ID = CLT_ID, AGY_TYPE_CODE = CLT_COLUMN_CODE), by = 'AGY_TYPE_ID' )
 
 
+ref <- names(CODE_ORA)
+							
+for (i in 1:length(ref)){
 
+		data.table:::fwrite(CODE_ORA[[ref[i]]] , paste0("J:\\DPAU\\MICRO\\_Admin\\template\\ilostat_codelist\\", ref[i], '.csv'))
+
+}							
+							
+							
+							
+							
+							
+							
+							
+							
 							
 save(CODE_ORA,file = paste0(wd, "CODE_ORA.rda"))
 rm( meta)

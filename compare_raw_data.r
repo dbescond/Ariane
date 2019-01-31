@@ -699,17 +699,9 @@ compare_annual <- function(test, i, ref_collection){
 		
 		ORA <- readRDS(paste0(ilo:::path$sys, 'ILO_Data/ORA/', test$value[i])) %>% 
 					filter(collection %in% ref_collection) %>% 
-					mutate(	test_STI = str_detect(note_source, 'R1:3260'), 
-							test_STI = ifelse(test_STI %in% TRUE, TRUE, FALSE), 
-							test_COL = str_sub(info, 5,7), TEST = paste0(test_STI, '_', test_COL))
-							
-		test_frame <- ORA  %>% filter(test_STI) %>% group_by(indicator) %>% summarise(test = paste0(unique(test_COL), collapse = '')) %>% filter(!test %in% 'CAL') %>% .$indicator					
-							
-			ORA <- ORA	%>% 
+					mutate(test_STI = str_detect(note_source, 'R1:3260'), test_STI = ifelse(test_STI %in% TRUE, TRUE, FALSE), test_COL = str_sub(info, 5,7), TEST = paste0(test_STI, '_', test_COL)) %>% 
 					select(-test_STI, -test_COL)  %>% 
 					mutate_all(as.character)
-					
-					
 		STI <- readRDS(paste0(ilo:::path$sys, 'ILO_Data/STI/', test$value[i])) %>% 
 					select_(.dots = c("collection", "ref_area", "source", "indicator", "sex", "sex_version", "classif1", "classif1_version", "classif2", "classif2_version", "time", "obs_value", "obs_status", "note_classif", "note_indicator", "note_source", 'freq_code')) %>% 
 					mutate(test_STI = TRUE, test_COL = 'COL', TEST = paste0(test_STI, '_', test_COL)) %>% 
@@ -726,13 +718,9 @@ invisible(gc(reset = TRUE))
 
 STI <- 	STI  %>% filter(indicator %in% TEST_IND)
 					
-# TEST indicator in YI that create problem
-
- TEST_IND <- Ariane:::CODE_ORA$T_CIC_COL %>% filter(CIC_COLLECTION_CODE %in% ref_collection) %>% distinct(CIC_INDICATOR_CODE) %>% 
- 				filter(CIC_INDICATOR_CODE %in% unique(test_frame))%>% .$CIC_INDICATOR_CODE
-	
-rm(test_frame)
-	
+# TEST indicator in YI
+TEST_IND <- Ariane:::CODE_ORA$T_CIC_COL %>% filter(CIC_COLLECTION_CODE %in% ref_collection) %>% distinct(CIC_INDICATOR_CODE) %>% filter(CIC_INDICATOR_CODE %in% unique(STI$indicator))%>% .$CIC_INDICATOR_CODE
+		
 ORA <- 	ORA  %>% filter(indicator %in% TEST_IND, source %in% unique(STI$source))
 		
 		
@@ -815,7 +803,7 @@ ORA <- 	ORA  %>% filter(indicator %in% TEST_IND, source %in% unique(STI$source))
 		
 					X1 <- ORA %>% left_join(check_ORA, by = c("collection", "ref_area", "source", "indicator", "sex_version", "classif1_version", "classif2_version", "time", "TEST")) %>% 
 							filter(keep %in% 1) %>% select(-keep) %>%
-							left_join(check_ORA %>% distinct(collection, ref_area, source, indicator, time) %>% mutate(keep = 1), 
+							left_join(check_STI %>% distinct(collection, ref_area, source, indicator, time,note_source) %>% mutate(keep = 1), 
 							by = c("collection", "ref_area", "source", "indicator", "time") ) %>%
 							filter(keep %in% 1) %>% 
 							select( -freq_code, -check, -keep)
@@ -825,7 +813,7 @@ ORA <- 	ORA  %>% filter(indicator %in% TEST_IND, source %in% unique(STI$source))
 				###### add compare with existing test file
 				
 					X1 <- X1 %>%  mutate_all(as.character) %>% mutate(obs_value = as.numeric(obs_value))  
-					X1  %>% data.table:::fwrite(file = paste0(ilo:::path$sys, 'ILO_Data/check/ON_',ref_collection,'/', test$value[i] %>% str_replace('.rds', '.csv')), na = '')
+					X1  %>% data.table:::fwrite(file = paste0(ilo:::path$sys, 'ILO_Data/check/ON_',ref_collection,'/',ref_collection,'_FROM',ref_collection,'_', test$value[i] %>% str_replace('.rds', '.csv')), na = '')
 					
 					X1 <- X1 %>% filter(TEST %in% c('FALSE_COL')) %>% count(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version, time)
 
@@ -841,9 +829,11 @@ ORA <- 	ORA  %>% filter(indicator %in% TEST_IND, source %in% unique(STI$source))
 				###### add compare with existing test file
 				
 				check_STI <- check_STI %>%  mutate_all(as.character) %>% mutate(obs_value = as.numeric(obs_value))
-				check_STI %>% data.table:::fwrite(file = paste0(ilo:::path$sys, 'ILO_Data/check/ON_STI/',ref_collection,'_FROM_', test$value[i] %>% str_replace('.rds', '.csv')), na = '')
+				check_STI %>% data.table:::fwrite(file = paste0(ilo:::path$sys, 'ILO_Data/check/ON_STI/',ref_collection,'_FROMSTI_', test$value[i] %>% str_replace('.rds', '.csv')), na = '')
 
 				check_STI <- check_STI %>% count(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version, time, note_source)
+
+
 
 			}
 			
@@ -890,12 +880,11 @@ ORA <- 	ORA  %>% filter(indicator %in% TEST_IND, source %in% unique(STI$source))
 					mutate(TEST = ifelse( ss.x < ss.y & n.x < n.y, paste0("DEL_",ref_collection,"_better_version_on_",ref_collection,"_more_points_on_STI"), TEST)) %>% 
 					mutate(TEST = ifelse( ss.x > ss.y & n.x == n.y, paste0("DEL_",ref_collection,"_better_version_on_STI_same_points_on_STI"), TEST)) %>% 
 					mutate(TEST = ifelse( ss.x > ss.y & n.x < n.y, paste0("DEL_",ref_collection,"_better_version_on_STI_more_points_on_STI"), TEST)) %>% 
-					mutate(TEST = ifelse( ss.x > ss.y & n.x > n.y, paste0("better_version_on_STI_more_points_on_",ref_collection ), TEST))%>% 
-					mutate(TEST = ifelse( TEST %in% c(NA, 'NA') , "Only_on_YI", TEST)) 
+					mutate(TEST = ifelse( ss.x > ss.y & n.x > n.y, paste0("better_version_on_STI_more_points_on_",ref_collection ), TEST)) %>% 
+					mutate(TEST = ifelse( TEST %in% NA , "to_check", TEST)) 
 				
 				
-				ref <- NEW %>% distinct(TEST) %>% .$TEST
-				
+				ref <- unique(NEW$TEST)
 				
 				for (j in 1:length(ref)){
 					
@@ -967,7 +956,7 @@ ORA <- 	ORA  %>% filter(indicator %in% TEST_IND, source %in% unique(STI$source))
 		if(nrow(ON_STI) > 0 & nrow(ON_ORA)  == 0){
 		
 				ON_STI <- ON_STI %>% select(-delete)
-				X1 <- STI %>% select(-TEST) %>% left_join(ON_STI, by = c("collection", "ref_area", "source", "indicator", "sex_version", "classif1_version", "classif2_version", "time")) %>% 
+				X1 <- STI %>% left_join(ON_STI, by = c("collection", "ref_area", "source", "indicator", "sex_version", "classif1_version", "classif2_version", "time")) %>% 
 							filter(check %in% c(1,0), collection %in% ref_collection) %>% 
 							select( -freq_code)
 				X1_rev <- X1 %>% filter(check %in% 1) %>% select(-check)		
@@ -1740,10 +1729,10 @@ ORA <- 	ORA  %>% filter(indicator %in% TEST_IND)
 					mutate(TEST = ifelse( ss.x > ss.y & n.x == n.y, "DEL_better_version_on_MICRO_same_points_on_MICRO", TEST)) %>% 
 					mutate(TEST = ifelse( ss.x > ss.y & n.x < n.y, "DEL_better_version_on_MICRO_more_points_on_MICRO", TEST)) %>% 
 					mutate(TEST = ifelse( ss.x > ss.y & n.x > n.y, "better_version_on_MICRO_more_points_on_ORA", TEST)) %>% 
-					mutate(TEST = ifelse( TEST %in% c(NA, 'NA') , "Only_on_YI", TEST)) 
+					mutate(TEST = ifelse( TEST %in% NA , "to_check", TEST)) 
 				
 				
-				ref <- NEW %>% distinct(TEST) %>% .$TEST
+				ref <- unique(NEW$TEST)
 				
 				for (j in 1:length(ref)){
 					
