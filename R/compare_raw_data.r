@@ -20,7 +20,7 @@ compare_raw_data <- function(ref_collection = 'STI', ref_ref_area = NULL, ref_fr
 
 	# clean up directory
 	
-	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>% as_data_frame
+	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>% 
 	for(i in 1:nrow(ref_file_STI_by_ref_area)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/', ref_file_STI_by_ref_area$value[i]))
 	}
@@ -32,8 +32,8 @@ compare_raw_data <- function(ref_collection = 'STI', ref_ref_area = NULL, ref_fr
 
 	# check files folder
 
-	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>% as_data_frame %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE, sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
-	ref_file_STI <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI/')) %>% as_data_frame %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE,  sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
+	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>% enframe(name = NULL) %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE, sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
+	ref_file_STI <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI/')) %>%  enframe(name = NULL) %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE,  sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
 
 	if(!is.null(ref_ref_area)){
 		ref_file_ORA <- ref_file_ORA %>% filter(ref_area %in% ref_ref_area)
@@ -293,14 +293,14 @@ merge_raw_data <- function(ref_collection = 'STI'){
 	
 	# clean up directory
 	
-	ref_file_ZZZ_ilostat <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/')) %>% as_data_frame %>% filter(str_detect(value, ref_collection))
+	ref_file_ZZZ_ilostat <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/')) %>%  enframe(name = NULL)  %>% filter(str_detect(value, ref_collection))
 	for(i in 1:nrow(ref_file_ZZZ_ilostat)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/', ref_file_ZZZ_ilostat$value[i]))
 	}	
 	rm(ref_file_ZZZ_ilostat)
 	
 	
-	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>% as_data_frame %>%  
+	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>%  enframe(name = NULL)  %>%  
 		separate(value, c('type', 'collection', 'ref_area', 'freq'), sep = '_', remove = FALSE) %>% mutate(freq = str_sub(freq, 1,1))
 	
 	
@@ -410,7 +410,7 @@ merge_raw_data_ANNUAL <- function(ref_collection = 'YI'){
 	
 	# clean up directory
 	
-	ref_file_ZZZ_ilostat <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/')) %>% as_data_frame %>% filter(str_detect(value, ref_collection))
+	ref_file_ZZZ_ilostat <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/')) %>%  enframe(name = NULL)  %>% filter(str_detect(value, ref_collection))
 	for(i in 1:nrow(ref_file_ZZZ_ilostat)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/', ref_file_ZZZ_ilostat$value[i]))
 	}	
@@ -421,7 +421,7 @@ merge_raw_data_ANNUAL <- function(ref_collection = 'YI'){
 	
 	
 	
-	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>% as_data_frame %>%  
+	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>%  enframe(name = NULL)  %>%  
 		separate(value, c('type','collection', 'ref_area', 'freq'), sep = '_', remove = FALSE) %>% mutate(freq = str_sub(freq, 1,1))
 	
 	
@@ -525,7 +525,7 @@ compare_raw_data_ANNUAL <- function(ref_collection = 'YI', ref_ref_area = NULL, 
 
 	# clean up directory
 	
-	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>% as_data_frame
+	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/')) %>% 
 	for(i in 1:nrow(ref_file_STI_by_ref_area)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/_by_ref_area_',ref_collection,'/', ref_file_STI_by_ref_area$value[i]))
 	}
@@ -534,8 +534,8 @@ compare_raw_data_ANNUAL <- function(ref_collection = 'YI', ref_ref_area = NULL, 
 
 	# check files folder
 
-	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>% as_data_frame %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE, sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
-	ref_file_STI <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI/')) %>% as_data_frame %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE,  sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
+	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>%  enframe(name = NULL)  %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE, sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
+	ref_file_STI <- list.files(paste0(ilo:::path$sys, 'ILO_Data/STI/')) %>%  enframe(name = NULL)  %>% separate(value, c('collection','ref_area','freq_code'), remove = FALSE,  sep = '_' ) %>% mutate(freq_code = str_sub(freq_code,1,1)) %>% filter(freq_code %in% ref_freq_code, collection %in% ref_collection)
 
 	if(!is.null(ref_ref_area)){
 		ref_file_ORA <- ref_file_ORA %>% filter(ref_area %in% ref_ref_area)
@@ -1063,7 +1063,7 @@ clean_up_YI <- function(){
 	
 	require(ilo)
 	init_ilo()
-	ref <- list.files(paste0(ilo:::path$sys, 'ILO_Data/check/COMPARE')) %>% as_data_frame %>% filter(str_sub(value, 1,4) %in% 'DEL_')
+	ref <- list.files(paste0(ilo:::path$sys, 'ILO_Data/check/COMPARE')) %>%  enframe(name = NULL)  %>% filter(str_sub(value, 1,4) %in% 'DEL_')
 
 	X <- NULL
 	for (i in 1:nrow(ref)){
@@ -1269,7 +1269,7 @@ merge_raw_data_YTHSTAT <- function(ref_collection = 'YTH'){
 	
 	# clean up directory
 	
-	ref_file_ZZZ_ilostat <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/')) %>% as_data_frame %>% filter(str_detect(value, ref_collection))
+	ref_file_ZZZ_ilostat <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/')) %>%  enframe(name = NULL)  %>% filter(str_detect(value, ref_collection))
 	for(i in 1:nrow(ref_file_ZZZ_ilostat)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/ZZZ_ilostat/', ref_file_ZZZ_ilostat$value[i]))
 	}	
@@ -1280,7 +1280,7 @@ merge_raw_data_YTHSTAT <- function(ref_collection = 'YTH'){
 	
 	
 	
-	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/YTH_by_ref_area/')) %>% as_data_frame %>%  
+	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/YTH_by_ref_area/')) %>%  enframe(name = NULL)  %>%  
 		separate(value, c('collection', 'type', 'ref_area', 'freq'), sep = '_', remove = FALSE) %>% mutate(freq = str_sub(freq, 1,1))
 	
 	
@@ -1384,7 +1384,7 @@ compare_raw_data_YTHSTAT <- function(ref_collection = 'YTH', ref_area = NULL, fr
 
 	# clean up directory
 	
-	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/YTH_by_ref_area/')) %>% as_data_frame
+	ref_file_STI_by_ref_area <- list.files(paste0(ilo:::path$sys, 'ILO_Data/YTH_by_ref_area/')) %>% 
 	for(i in 1:nrow(ref_file_STI_by_ref_area)){
 		unlink(paste0(ilo:::path$sys, 'ILO_Data/YTH_by_ref_area/', ref_file_STI_by_ref_area$value[i]))
 	}
@@ -1394,8 +1394,8 @@ compare_raw_data_YTHSTAT <- function(ref_collection = 'YTH', ref_area = NULL, fr
 
 	# check file folder
 
-	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>% as_data_frame %>% filter(str_sub(value, 5,5) %in% freq_code) %>% filter(!str_sub(value, 1,1) %in% 'X') 
-	ref_file_STI <- list.files(paste0(ilo:::path$data, '/REP_ILO/YTHSTAT/Output/')) %>% as_data_frame %>% filter(str_sub(value, 5,5) %in% freq_code) 
+	ref_file_ORA <- list.files(paste0(ilo:::path$sys, 'ILO_Data/ORA/')) %>%  enframe(name = NULL)  %>% filter(str_sub(value, 5,5) %in% freq_code) %>% filter(!str_sub(value, 1,1) %in% 'X') 
+	ref_file_STI <- list.files(paste0(ilo:::path$data, '/REP_ILO/YTHSTAT/Output/')) %>%  enframe(name = NULL) %>% filter(str_sub(value, 5,5) %in% freq_code) 
 
 	if(!is.null(ref_area)){
 		ref_file_ORA <- ref_file_ORA %>% filter(str_sub(value,1,3 ) %in% ref_area)

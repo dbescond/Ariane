@@ -14,7 +14,7 @@ plyDataST <- function(Title, ReadMe, mywd, ilo_tpl){
 Title <- unlist(Title)
 
 
-# Title <- "ALB"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys; ilo_tpl <- ilo_tpl$Mapping_indicator
+# Title <- "AUT"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys; ilo_tpl <- ilo_tpl$Mapping_indicator
 KEY_ORACLE 	<- c("Country_Code","Indicator_Code","Source_Code","Sex_Version_Code","Classif1_Version_Code","Classif2_Version_Code","Time","Sex_Code","Classif1_Code","Classif2_Code", "Value","Value_Status_Code","Currency_Code","Value_Notes_String","Qtable_Notes_String")
 key_QTA <- KEY_ORACLE[1:7] ; key_ALL <- KEY_ORACLE[1:10]
 statistics <- c(Collected_manual 	= 0, 

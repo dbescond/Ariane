@@ -245,7 +245,7 @@ splitid <- function(ReadMe, arguments){
 		for(i in 1:length(arguments)){ 
 			eval(parse(text=arguments[[i]]))
 		}
-		test <- data_frame(country = REF_COU, BinSize = as.numeric(file.info(paste0("./Processing/ILO_Data/ON_ORACLE/",REF_COU,".rds"))$size))  %>% 
+		test <- tibble(country = REF_COU, BinSize = as.numeric(file.info(paste0("./Processing/ILO_Data/ON_ORACLE/",REF_COU,".rds"))$size))  %>% 
 						mutate(BinSize = ifelse(BinSize%in%NA, "700", BinSize)) %>% 
 						arrange(as.numeric(BinSize)) %>% mutate(ID = NA)
 		new <- list(1:nb)
@@ -274,7 +274,7 @@ splitCountry <- function(ReadMe, arguments){
 		for(i in 1:length(arguments)){ 
 			eval(parse(text=arguments[[i]]))
 		}
-		test <- data_frame(country = REF_COU, BinSize = as.numeric(file.info(paste0("./Processing/ILO_Data/ON_ORACLE/",REF_COU,".rds"))$size))  %>% 
+		test <- tibble(country = REF_COU, BinSize = as.numeric(file.info(paste0("./Processing/ILO_Data/ON_ORACLE/",REF_COU,".rds"))$size))  %>% 
 						mutate(BinSize = ifelse(BinSize%in%NA, "700", BinSize)) %>% 
 						arrange(as.numeric(BinSize)) %>% mutate(ID = NA)
 		new <- list(1:nb)
@@ -1450,7 +1450,7 @@ backup_dpau <- function(sys){
 
 
 repo <- 'Rilostat'
-ref <- list.files(paste0(sys,repo)) %>% as_data_frame %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
+ref <- list.files(paste0(sys,repo)) %>% enframe(name = NULL) %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
 
 for (i in 1:5){file.copy(from = paste0(sys,repo,'/', ref$value[i]), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/', ref$value[i]))}
 file.copy(from = paste0(sys,repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
@@ -1459,20 +1459,20 @@ file.copy(from = paste0(sys,repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/',
 
 # repo <- 'Artemis'
 
-# ref <- list.files(paste0(sys,repo)) %>% as_data_frame %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
+# ref <- list.files(paste0(sys,repo)) %>% enframe(name = NULL) %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
 # for (i in 1:5){file.copy(from = paste0(sys,repo,'/', ref$value[i]), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/', ref$value[i]))}
 # file.copy(from = paste0(sys,repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
 # file.copy(from = paste0(sys,repo,'/inst/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
 
 repo <- 'Ariane'
-ref <- list.files(paste0(sys,repo)) %>% as_data_frame %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
+ref <- list.files(paste0(sys,repo)) %>% enframe(name = NULL) %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
 for (i in 1:5){file.copy(from = paste0(sys,repo,'/', ref$value[i]), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/', ref$value[i]))}
 file.copy(from = paste0(sys,repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
 
 
 
 repo <- 'ilo'
-ref <- list.files(paste0(sys,repo)) %>% as_data_frame %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
+ref <- list.files(paste0(sys,repo)) %>% enframe(name = NULL) %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
 for (i in 1:5){file.copy(from = paste0(sys,repo,'/', ref$value[i]), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/', ref$value[i]))}
 file.copy(from = paste0(sys,repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
 file.copy(from = paste0(sys,repo,'/inst/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
@@ -1481,7 +1481,7 @@ file.copy(from = paste0(sys,repo,'/vignettes/'), to = paste0(ilo:::path$data, '_
 
 
 repo <- 'iloMicro'
-ref <- list.files(paste0(sys, repo)) %>% as_data_frame %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
+ref <- list.files(paste0(sys, repo)) %>% enframe(name = NULL) %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
 for (i in 1:5){file.copy(from = paste0(sys, repo,'/', ref$value[i]), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/', ref$value[i]))}
 file.copy(from = paste0(sys, repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
 file.copy(from = paste0(sys, repo,'/inst/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
@@ -1490,7 +1490,7 @@ file.copy(from = paste0(sys, repo,'/vignettes/'), to = paste0(ilo:::path$data, '
 
 
 repo <- 'iloData'
-ref <- list.files(paste0(sys, repo)) %>% as_data_frame %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
+ref <- list.files(paste0(sys, repo)) %>% enframe(name = NULL) %>% filter(value %in% c("DESCRIPTION", "LICENSE", "NAMESPACE", "NEWS.md", "README.md" ))
 for (i in 1:5){file.copy(from = paste0(sys,repo,'/', ref$value[i]), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/', ref$value[i]))}
 file.copy(from = paste0(sys,repo,'/R/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
 file.copy(from = paste0(sys,repo,'/inst/'), to = paste0(ilo:::path$data, '_Admin/', 'Pandora/',repo,'/'),recursive = TRUE)
