@@ -10,7 +10,7 @@ LoadDataST <- function(ReadMe, wd){
 ################################################################## DATA
 
 
-
+my_machine <- Sys.info()["nodename"]
 HEADER_TS <- t(readxl:::read_excel(paste0(wd, "ILO_Meta/CODE_HEADER.xlsx"), sheet  ="TS"))
 
 colnames(HEADER_TS) <- HEADER_TS[1,]
@@ -45,12 +45,13 @@ TEST_FRAMEWORK <- ilo_tpl$Mapping_indicator %>% select(Is_Validate, indicator, s
 require(ilo)
 init_ilo()
 
-
-
 for (i in 1:length(ReadMe$PATH)){
+
+checkNAME <- ReadMe$PATH[i] %>% basename %>% str_split(fixed('.')) %>% unlist() %>% .[1]
+
 	if(ReadMe$Types[i]%in%"TS" & str_sub(ReadMe$PATH[i],-4,-1)%in%c("xlsm","xlsx",".xls")){
-		X <- readxl:::read_excel(ReadMe$PATH[i], sheet="Database", col_names =FALSE) 
-		colnames(X) <- X[1,] 
+		X <- readxl:::read_excel(ReadMe$PATH[i], sheet="Database", col_names =TRUE, guess_max = 20000) %>% mutate_all(as.character)
+		#colnames(X) <- X[1,] 
 		X <- as.tbl(X[-1,!colnames(X)%in%c("NA", NA)]) %>% 
 				filter(!Country_Code %in%NA)
 		colnames(X) <- gsub("_",    " ", tolower(colnames(X)), fixed = TRUE)
@@ -62,6 +63,7 @@ for (i in 1:length(ReadMe$PATH)){
 		X <- X %>% 	
 				mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>% 
 				reshapeDataLongFormatST
+				
 		X <- X[,colnames(X)%in%colnames(HEADER_CL)]
 		colnames(X) <- new_col[match(colnames(X), new_col$Header), "NEW"] %>% t %>% c
 		X <- X[,!colnames(X)%in%NA]
@@ -100,8 +102,14 @@ for (i in 1:length(ReadMe$PATH)){
 								summarise(count = n(), test = paste0(unique(paste(Country_Code, Source_Code, count,i, sep="/")))) %>% 
 								summarise(test = paste(unique(test), collapse=";")) %>% 
 								as.character
-		save(X,file = paste0(wd, "ILO_Data/ON_STI_FILES/File",i,".Rdata"))
-	}
+								
+		for(cou in unique(X$Country_Code)){
+
+			X %>% filter(Country_Code %in% cou) %>% saveRDS(file = paste0(wd, "ILO_Data/ON_STI_FILES/",cou,"_",my_machine,"_",checkNAME,"_",i,".rds"))
+
+		}						
+								
+		}
 
 	if (str_sub(ReadMe$PATH[i],-6,-1)%in%c(".Rdata") & ReadMe$Types[i] %in% 'CL'){
 	
@@ -147,8 +155,12 @@ for (i in 1:length(ReadMe$PATH)){
 					Classif2_Code = as.character(ifelse(Classif2_Code %in% NA,"XXX_XXX_XXX",Classif2_Code)),
 					Value =as.numeric(Value))  %>% as.tbl
 
-		save(X,file = paste0(wd, "ILO_Data/ON_STI_FILES/File",i,".Rdata"))
-	}
+		for(cou in unique(X$Country_Code)){
+
+			X %>% filter(Country_Code %in% cou) %>% saveRDS(file = paste0(wd, "ILO_Data/ON_STI_FILES/",cou,"_",my_machine,"_",checkNAME,"_",i,".rds"))
+
+		}
+		}
 
 
 	if (str_sub(ReadMe$PATH[i],-6,-1)%in%c(".Rdata") & str_detect(ReadMe$Types[i],'ilostat')){
@@ -162,7 +174,10 @@ for (i in 1:length(ReadMe$PATH)){
 			X <- X %>% 	mutate(frequency = str_sub(time, 5,5)) %>% left_join(TEST_FRAMEWORK, by = c("indicator", 'frequency', 'sex_version', 'classif1_version', 'classif2_version')) %>%
 				mutate(Is_Validate  = ifelse(indicator %in% 'IFL_4IEM_SEX_ECO_IFL_NB', 'TRUE', Is_Validate)) %>%
 				filter(Is_Validate %in% 'TRUE') %>% 
-				filter(!(as.numeric(table_test) > 0.3339 & as.numeric(benchmark) == 1) ) %>% select(-contains('Is_Validate'), -contains('frequency'), -contains('sample_count'), -contains('table_test'), -contains('ilo_wgt'), -contains("benchmark") )
+				select(-table_test) %>% 
+				Ariane:::benchmarkUtables() %>% 
+				filter(!(table_test > 0.3339 & as.numeric(benchmark) == 1) ) %>% 
+				select(-contains('Is_Validate'), -contains('frequency'), -contains('sample_count'), -contains('ilo_sample_count'), -contains('table_test'), -contains('ilo_wgt'), -contains("benchmark") )
 	
 
 		}
@@ -204,7 +219,7 @@ for (i in 1:length(ReadMe$PATH)){
 						Freq_Code = as.character(Freq_Code), 
 						Add_Repository = ref_add_repo,
 						Add_Status = 'B') %>% 
-				select_(.dots = colnames(HEADER_CL))	%>% 
+				select(!!colnames(HEADER_CL))	%>% 
 				mutate(Indicator_Code = ifelse(substr(Indicator_Code, 17,17) %in% '2', paste0(str_sub(Indicator_Code, 1, 5), '9', str_sub(Indicator_Code, 7, -1)), Indicator_Code), 
 					Indicator_Code = ifelse(nchar(Indicator_Code)>11, paste0(str_sub(Indicator_Code, 1,8), str_sub(Indicator_Code, -3,-1)), Indicator_Code),	
 					Add_Status 	= as.character(ifelse(Add_Status %in% NA,"M",Add_Status)),
@@ -217,13 +232,16 @@ for (i in 1:length(ReadMe$PATH)){
 	invisible(gc(reset = TRUE))	
 	invisible(gc(reset = TRUE))	
 
+	for(cou in unique(X$Country_Code)){
 
-		save(X,file = paste0(wd, "ILO_Data/ON_STI_FILES/File",i,".Rdata"))
+			X %>% filter(Country_Code %in% cou) %>% saveRDS(file = paste0(wd, "ILO_Data/ON_STI_FILES/",cou,"_",my_machine,"_",checkNAME,"_",i,".rds"))
+
+		}
 	}
 
 	ReadMe$ID[i] <- i
  
-print(paste0(i,"#",length(ReadMe$PATH),"#",nrow(X),"#", nrow(X %>% filter(as.numeric(str_sub(Time,1,4)) >2009)), '#',ReadMe$PATH[i]))
+# print(paste0(i,"#",length(ReadMe$PATH),"#",nrow(X),"#", nrow(X %>% filter(as.numeric(str_sub(Time,1,4)) >2009)), '#',ReadMe$PATH[i]))
 rm(X)
 
 	invisible(gc(reset = TRUE))	
@@ -238,7 +256,7 @@ rm(TEST_FRAMEWORK)
 	invisible(gc(reset = TRUE))	
 
 
-saveRDS(ReadMe %>% select(-SURVEY) %>% as.tbl,file = paste0(wd, "ILO_Data/ON_STI_FILES/ReadMe.rds"))
+# saveRDS(ReadMe %>% select(-SURVEY) %>% as.tbl,file = paste0(wd, "ILO_Data/ON_STI_FILES/ReadMe.rds"))
 
 
 

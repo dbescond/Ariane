@@ -4,7 +4,6 @@
 #' @param Lang language, default = EN, SP, FR also available 
 #' @author ILO bescond  
 #' @keywords ILO
-#' @import stringr readxl readr
 #' @export
 
 sortDataOracle <- function(X, Lang = "EN"){
@@ -91,6 +90,88 @@ X  %>%
 					# Notes_Classif_Code 		= factor(Notes_Classif_Code, 	sort(levels(as.factor(Notes_Classif_Code	))))
 				# )
 }
+
+
+#' @export
+
+sortDataOracle_oracle_format <- function(X, Lang = "EN"){
+
+# sorting part :
+X  %>% 
+			mutate(	ref_area 			= factor(ref_area, 			select(Ariane:::CODE_ORA$T_COU_COUNTRY, COU_ISO3_CODE,COUNTRY_SORT = COU_SORT_EN) %>% 
+																					filter(COU_ISO3_CODE %in% levels(as.factor(X$ref_area))) %>% 
+																					arrange(as.numeric(COUNTRY_SORT)) %>% 
+																					select(ref_area = COU_ISO3_CODE) %>% t %>% as.character
+												), 
+					source				= factor(source, 			select(Ariane:::CODE_ORA$T_SUR_SURVEY, SUR_ID,SUR_SORT, SUR_SOURCE_CODE) %>% 
+																					mutate(SUR_ID = paste0(SUR_SOURCE_CODE, ':',SUR_ID )) %>% 
+																					select(-SUR_SOURCE_CODE) %>% 
+																					filter(SUR_ID %in% levels(as.factor(X$source))) %>% 
+																					arrange(as.numeric(SUR_SORT)) %>% 
+																					select(source = SUR_ID) %>% t %>% as.character
+												),
+					collection 		= factor(collection, 		select(Ariane:::CODE_ORA$T_COL_COLLECTION, COL_CODE,COL_ID) %>% 
+																					filter(COL_CODE %in% levels(as.factor(X$collection))) %>% 
+																					arrange(as.numeric(COL_ID)) %>% 
+																					select(collection = COL_CODE) %>% t %>% as.character
+												),
+					indicator 			= factor(indicator, 		select(Ariane:::CODE_ORA$T_IND_INDICATOR, IND_CODE,IND_SORT) %>% 
+																					filter(IND_CODE %in% levels(as.factor(X$indicator))) %>% 
+																					arrange(IND_SORT) %>% 
+																					select(indicator = IND_CODE) %>% t %>% as.character
+												),
+					sex_version 		= factor(sex_version, 		select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
+																					filter(CLV_CODE %in% levels(as.factor(X$sex_version))) %>% 
+																					arrange(as.numeric(CLV_SORT)) %>% 
+																					select(sex_version = CLV_CODE) %>% t %>% as.character
+												),
+					classif1_version 	= factor(classif1_version, select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
+																					filter(CLV_CODE %in% levels(as.factor(X$classif1_version))) %>% 
+																					arrange(as.numeric(CLV_SORT)) %>% 
+																					select(classif1_version = CLV_CODE) %>% t %>% as.character
+												),
+					classif2_version 	= factor(classif2_version, select(Ariane:::CODE_ORA$T_CLV_CLASSIF_VERSION, CLV_CODE,CLV_SORT) %>% 
+																					filter(CLV_CODE %in% levels(as.factor(X$classif2_version))) %>% 
+																					arrange(as.numeric(CLV_SORT)) %>% 
+																					select(classif2_version = CLV_CODE) %>% t %>% as.character
+												),
+					time 					= factor(time, 					select(Ariane:::CODE_ORA$T_TIM_TIME, TIM_FORMAT_USER,TIM_ID) %>% 
+																					filter(TIM_FORMAT_USER %in% levels(as.factor(X$time))) %>% 
+																					arrange(as.numeric(TIM_ID)) %>% 
+																					select(time = TIM_FORMAT_USER) %>% t %>% as.character
+												),
+					sex 				= factor(sex, 				select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
+																					filter(CLA_CODE %in% levels(as.factor(X$sex))) %>% 
+																					arrange(as.numeric(CLA_SORT)) %>% 
+																					select(sex = CLA_CODE) %>% t %>% as.character
+												),
+					classif1 			= factor(classif1, 		select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
+																					filter(CLA_CODE %in% levels(as.factor(X$classif1))) %>% 
+																					arrange(as.numeric(CLA_SORT)) %>% 
+																					select(classif1 = CLA_CODE) %>% t %>% as.character
+												),
+					classif2 			= factor(classif2, 		select(Ariane:::CODE_ORA$T_CLA_CLASSIF, CLA_CODE,CLA_SORT) %>% 
+																					filter(CLA_CODE %in% levels(as.factor(X$classif2))) %>% 
+																					arrange(as.numeric(CLA_SORT)) %>% 
+																					select(classif2 = CLA_CODE) %>% t %>% as.character
+												)
+				) %>% 	
+			arrange(	ref_area, 
+						source, 
+						collection, 
+						indicator, 
+						sex_version, 
+						classif1_version, 
+						classif2_version,  
+						time, 
+						sex, 
+						classif1, 
+						classif2
+				 )  %>% 
+		mutate_if(is.factor, as.character) 
+				
+}
+
 
 
 #' @export
@@ -326,16 +407,16 @@ cleanDf 	<-	function(df, header  = TRUE){
 
 	if(header){		
 		df %>%
-			mutate_all(funs(as.character)) %>%
-			mutate_all(funs(str_trim) ) %>%
-			mutate_all(funs(mapvalues(.,c('NaN', '', 'NA'), c(NA,NA, NA), warn_missing = FALSE))) 
+			mutate_all(.funs = as.character) %>%
+			mutate_all(.funs = str_trim ) %>%
+			mutate_all(funs(mapvalues(.,c('NaN', '', 'NA'), c(NA,NA, NA), warn_missing = FALSE)))
 	} else {
 		ref <- df %>% slice(1) %>% t %>% c
 		colnames(df)[!is.na(ref)] <- ref[!is.na(ref)]
 		df[,ref[!is.na(ref)]] %>% as.tbl %>%
 			slice(-1) %>%
-			mutate_all(funs(as.character) ) %>%
-			mutate_all(funs(str_trim)) %>%
+			mutate_all(.funs = as.character) %>%
+			mutate_all(.funs = str_trim ) %>%
 			mutate_all(funs(mapvalues(.,c('NaN', '', 'NA'), c(NA,NA, NA), warn_missing = FALSE)))
 	}
 } 
@@ -424,7 +505,7 @@ X <- X 	%>% mutate(	Lang = "EN",
 					Obs_Value = as.numeric(Value),
 					Free_Text_Notes = as.character(NA)
 			)%>% 
-			select_(.dots  = c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
+			select(!!c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
 
 					
 
@@ -457,7 +538,7 @@ X <- X %>% 	group_by(Country_Code,Collection_Code,Indicator_Code,Survey_Code,Sex
 						Qtable_Notes_String = as.character(NA), 
 						Free_Text_Notes = as.character(NA)) %>% 
 			ungroup()  %>% 
-			select_(.dots  = c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
+			select(!!c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
 
 					
 }
@@ -502,7 +583,7 @@ X <- X %>%
 		left_join(select(T_CLT_CODELIST, Unit_Measure_Id = CLT_ID, Unit_Measure_Code = CLT_COLUMN_CODE ,Unit_Measure_Label = 'CLT_TEXT_EN'),by ="Unit_Measure_Id") %>% select(-Unit_Measure_Id) %>%
 		left_join(select(T_CLT_CODELIST, Unit_Multiplier_Id = CLT_ID, Unit_Multiplier_Code = CLT_COLUMN_CODE ,Unit_Multiplier_Label = 'CLT_TEXT_EN'),by ="Unit_Multiplier_Id") %>% select(-Unit_Multiplier_Id) %>%
 		left_join(select(T_SRC_SOURCE, Source_Code = SRC_CODE, Source_Label = 'SRC_TEXT_EN', SOURCE_SORT = SRC_SORT),by ="Source_Code") %>%
-		left_join(select(mutate_all(T_SUR_SURVEY, funs(as.character)), Survey_Code = SUR_ID, Survey_Label = SUR_SURVEY_TITLE_EN,SURVEY_SORT = SUR_SORT),by ="Survey_Code") %>%
+		left_join(select(mutate_all(T_SUR_SURVEY, .funs = as.character), Survey_Code = SUR_ID, Survey_Label = SUR_SURVEY_TITLE_EN,SURVEY_SORT = SUR_SORT),by ="Survey_Code") %>%
 		
 		left_join(select(T_CLY_CLASSIF_TYPE, Sex_Code = CLY_CODE, SEX_TYPE_SORT = CLY_SORT),by ="Sex_Code") %>%
 		left_join(select(T_CLY_CLASSIF_TYPE, Classif1_Code = CLY_CODE, CLASSIF1_TYPE_SORT = CLY_SORT),by ="Classif1_Code") %>%
@@ -668,7 +749,7 @@ COL_X <- c(
 #"Notes_Classif_Label"
 )
 
-X <- X %>% select_(.dots = COL_X) %>% 
+X <- X %>% select(!!COL_X) %>% 
 			rename(collection = Collection_Code, ref_area = Country_Code, indicator = Indicator_Code, source = Source_Code, 
 					sex = Sex_Item_Code, classif1 = Classif1_Version_Item_Code, classif2 = Classif2_Version_Item_Code, 
 					time = Time, 
@@ -779,7 +860,7 @@ X <- X 	%>% mutate(	Lang = "EN",
 					Obs_Value = as.numeric(Value),
 					Free_Text_Notes = as.character(NA)
 			)%>% 
-			select_(.dots  = c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
+			select(!!c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
 
 					
 
@@ -812,7 +893,7 @@ X <- X %>% 	group_by(Country_Code,Collection_Code,Indicator_Code,Survey_Code,Sex
 						Qtable_Notes_String = as.character(NA), 
 						Free_Text_Notes = as.character(NA)) %>% 
 			ungroup()  %>% 
-			select_(.dots  = c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
+			select(!!c("Lang", "Country_Code", "Country_Label", "Collection_Code", "Collection_Label", "Indicator_Code", "Indicator_Label", "Survey_Code", "Survey_Label", "Sex_Version_Code", "Classif1_Version_Code","Classif2_Version_Code","Classif3_Version_Code","Classif4_Version_Code","Classif5_Version_Code","Sex_Item_Code", "Sex_Item_Label", "Classif1_Item_Code", "Classif1_Item_Label", "Classif2_Item_Code", "Classif2_Item_Label", "Classif3_Item_Code", "Classif3_Item_Label", "Classif4_Item_Code", "Classif4_Item_Label", "Classif5_Item_Code", "Classif5_Item_Label", "Freq", "Time", "Obs_Value", "Flag", "Currency", "Value_Notes_String", "Qtable_Notes_String", "Free_Text_Notes"))
 
 					
 }
@@ -943,7 +1024,7 @@ Clean_col_format <- function(X, col_names =  c("Country_Code", "Collection_Code"
 			X <- eval(parse(text= paste0("  X %>% mutate(",col_names[i]," = 	as.character(NA))"))) 
 		}
 	}
-	X %>% select_(.dots  = col_names)
+	X %>% select(!!col_names)
 }
 
 #' @export
@@ -977,7 +1058,7 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 	if(!plyr:::empty(test)){
 		for (i in 1:nrow(test)){
 			load(paste0(wd, "ILO_Data/ON_ORACLE_To_Upload_By_Country/",test[i,"country"]))
-			X <- X %>% 	mutate_all(funs(as.character)) %>% 
+			X <- X %>% 	mutate_all(.funs = as.character) %>% 
 						mutate(Value = as.numeric(Value)) %>% 
 						filter(!(Classif1_Version_Code%in%NA & !Classif2_Version_Code%in%NA))
 
@@ -999,11 +1080,11 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 		
 				X <- Ariane::Clean_col_format(X, col_names = KEY_ORACLE)
 
-				X <- X  %>% select_(.dots  = KEY_ORACLE)
+				X <- X  %>% select(!!KEY_ORACLE)
 
 			}
 
-			X <- X %>% 	mutate_all(funs(as.character) ) #%>%
+			X <- X %>% 	mutate_all(.funs = as.character ) #%>%
 						#mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) 
 						#mutate_all(funs(recode(.,'NaN' = NA, '' = NA, ' ' = NA, 'NA' = NA))) 
 
@@ -1019,7 +1100,7 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 			Y$ID <- do.call("paste", c(Y[key_ALL], sep = "/"))
 			Y <- Y[order(Y$ID),]
 			Y <- Y[,!colnames(Y)%in%"ID"]
-			Y <- Y  %>% select_(.dots  = KEY_ORACLE)
+			Y <- Y  %>%  select(!!KEY_ORACLE)
 
 			if(floor(nrow(Y)/cutOff)>0){
 				for (j in 1:floor(nrow(Y)/cutOff)){
@@ -1039,14 +1120,14 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 							TO_UP <- TO_UP %>% 	mutate(test = Survey_Code %>% plyr:::mapvalues(	from 	= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_ID, 
 																			to 		= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_SOURCE_CODE, warn_missing = FALSE) ) %>% 
 												unite(source, test, Survey_Code, sep = ':', remove = TRUE) %>% 
-										select_(.dots = c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
+										 select(!!c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
 			
 							colnames(TO_UP) <- ref_names
 									TO_UP <- TO_UP %>% distinct(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version,  time)
 
 						}else{				
 							TO_UP <-  TO_UP %>% 
-										select_(.dots = c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
+										select(!!c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
 										rename(	collection = Collection_Code, 
 												ref_area = Country_Code, 
 												indicator = Indicator_Code, 
@@ -1088,7 +1169,7 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 							TO_UP <- TO_UP %>% 	mutate(test = Survey_Code %>% plyr:::mapvalues(	from 	= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_ID, 
 																			to 		= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_SOURCE_CODE, warn_missing = FALSE) ) %>% 
 												unite(source, test, Survey_Code, sep = ':', remove = TRUE) %>% 
-										select_(.dots = c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
+										select(!!c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
 			
 							colnames(TO_UP) <- ref_names
 							TO_UP <- TO_UP %>% distinct(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version,  time)
@@ -1096,7 +1177,7 @@ My_Group_file_for_Oracle_NEW <- function(MODE = "NEW", Collection="STI", files=F
 					print(paste(nrow(TO_UP)))
 				} else{				
 					TO_UP <-  TO_UP %>% 
-								select_(.dots = c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
+								select(!!c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
 								rename(	collection = Collection_Code, 
 										ref_area = Country_Code, 
 										indicator = Indicator_Code, 
@@ -1155,7 +1236,7 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 	if(!plyr:::empty(test)){
 		for (i in 1:nrow(test)){
 			load(paste0(wd, "ILO_Data/ON_ORACLE_To_Upload_By_Country/",test[i,"country"]))
-			X <- X %>% 	mutate_all(funs(as.character)) %>% 
+			X <- X %>% 	mutate_all(as.character) %>% 
 						mutate(Value = as.numeric(Value)) %>% 
 						filter(!(Classif1_Version_Code%in%NA & !Classif2_Version_Code%in%NA))
 
@@ -1177,11 +1258,11 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 		
 				X <- Ariane::Clean_col_format(X, col_names = KEY_ORACLE)
 
-				X <- X  %>% select_(.dots  = KEY_ORACLE)
+				X <- X  %>% select(!!KEY_ORACLE)
 
 			}
 
-			X <- X %>% 	mutate_all(funs(as.character) ) #%>%
+			X <- X %>% 	mutate_all(as.character ) #%>%
 						#mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) 
 						#mutate_all(funs(recode(.,'NaN' = NA, '' = NA, ' ' = NA, 'NA' = NA))) 
 
@@ -1197,7 +1278,7 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 			Y$ID <- do.call("paste", c(Y[key_ALL], sep = "/"))
 			Y <- Y[order(Y$ID),]
 			Y <- Y[,!colnames(Y)%in%"ID"]
-			Y <- Y  %>% select_(.dots  = KEY_ORACLE)
+			Y <- Y  %>% select(!!KEY_ORACLE)
 
 			if(floor(nrow(Y)/cutOff)>0){
 				for (j in 1:floor(nrow(Y)/cutOff)){
@@ -1217,15 +1298,15 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 							TO_UP <- TO_UP %>% 	mutate(test = Survey_Code %>% plyr:::mapvalues(	from 	= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_ID, 
 																			to 		= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_SOURCE_CODE, warn_missing = FALSE) ) %>% 
 												unite(source, test, Survey_Code, sep = ':', remove = TRUE) %>% 
-										select_(.dots = c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
+										select(!!c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
 			
 							colnames(TO_UP) <- ref_names
 									TO_UP <- TO_UP %>% distinct(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version,  time)
 
 						}else{				
 							TO_UP <-  TO_UP %>% 
-										select_(.dots  = KEY_ORACLE) %>% 
-										select_(.dots = c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
+										select(!!KEY_ORACLE) %>% 
+										select(!!c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
 										rename(	collection = Collection_Code, 
 												ref_area = Country_Code, 
 												indicator = Indicator_Code, 
@@ -1267,7 +1348,7 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 							TO_UP <- TO_UP %>% 	mutate(test = Survey_Code %>% plyr:::mapvalues(	from 	= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_ID, 
 																			to 		= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_SOURCE_CODE, warn_missing = FALSE) ) %>% 
 												unite(source, test, Survey_Code, sep = ':', remove = TRUE) %>% 
-										select_(.dots = c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
+										select(!!c("Collection_Code", "Country_Code", "source", "Indicator_Code",  "Sex_Version_Code", "Classif1_Version_Code", "Classif2_Version_Code", "Time"))
 			
 							colnames(TO_UP) <- ref_names
 							TO_UP <- TO_UP %>% distinct(collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version,  time)
@@ -1275,7 +1356,7 @@ My_Group_file_for_Oracle <- function(MODE = "NEW", Collection="STI", files=FALSE
 					print(paste(nrow(TO_UP)))
 				} else{				
 					TO_UP <-  TO_UP %>% 
-								select_(.dots = c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
+								select(!!c( "Country_Code", "Collection_Code", "Indicator_Code", "Survey_Code",  "Sex_Item_Code", "Classif1_Item_Code", "Classif2_Item_Code", "Time", "Obs_Value", "Flag", "Value_Notes_String", "Qtable_Notes_String")) %>% 
 								rename(	collection = Collection_Code, 
 										ref_area = Country_Code, 
 										indicator = Indicator_Code, 
@@ -1350,7 +1431,7 @@ replacetime <- replacetime[1:length(selectTime)]
 				
 		
 Y <- Ariane::Clean_col_format(X, col_names = KEY_ORACLE) %>% 
-				select_(.dots  = KEY_ORACLE) %>% 	
+				select(!!KEY_ORACLE) %>% 	
 				mutate_each(funs(as.character),everything() ) %>%
 				mutate_each(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE)), everything()) 
 
@@ -1362,7 +1443,7 @@ Y <- Y[order(Y$ID),]
 Y <- Y[,!colnames(Y)%in%"ID"]
 
 
-Y <- Y  %>% select_(.dots  = KEY_ORACLE)
+Y <- Y  %>% select(!!KEY_ORACLE)
 
 
 

@@ -8,7 +8,7 @@
 #' @examples
 #' ################################# use to identify a proper	'DSD'		 
 #'
-#' X %>%	mutate(	Notes_Source_Code = 	mapvalues(Notes_Source_Code,	from = levels(as.factor(Notes_Source_Code)), 
+#' X %>%	mutate(	Notes_Source_Code = 	plyr:::mapvalues(Notes_Source_Code,	from = levels(as.factor(Notes_Source_Code)), 
 #'																			to = My_Transform_notesJ(levels(as.factor(Notes_Source_Code)),SEP = "_")))
 #'
 

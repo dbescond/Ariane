@@ -61,11 +61,11 @@ FLAG <- CODE_ORA$T_CLT_CODELIST %>% filter(CLT_COLUMN_NAME%in%"VALUE_STATUS")
 X <- X %>%
 		mutate(	
 				Survey_Code = as.character(Survey_Id),
-				Notes_Source_Label = mapvalues(Notes_Source_Code,			from = levels(as.factor(Notes_Source_Code)), 
+				Notes_Source_Label = plyr:::mapvalues(Notes_Source_Code,			from = levels(as.factor(Notes_Source_Code)), 
 																			to = My_Label_notesJ(levels(as.factor(Notes_Source_Code)),SEP = "_", Lang = Lang)),
-				Notes_Indicator_Label = mapvalues(Notes_Indicator_Code, 	from = levels(as.factor(Notes_Indicator_Code)), 
+				Notes_Indicator_Label = plyr:::mapvalues(Notes_Indicator_Code, 	from = levels(as.factor(Notes_Indicator_Code)), 
 																			to = My_Label_notesJ(levels(as.factor(Notes_Indicator_Code)),SEP = "_", Lang = Lang)),
-				Notes_Classif_Label = mapvalues(Notes_Classif_Code,			from = levels(as.factor(Notes_Classif_Code)), 
+				Notes_Classif_Label = plyr:::mapvalues(Notes_Classif_Code,			from = levels(as.factor(Notes_Classif_Code)), 
 																			to = My_Label_notesJ(levels(as.factor(Notes_Classif_Code)),SEP = "_", Lang = Lang)),
 				Classif1_Version_Code = as.character(Classif1_Version_Code),
 				Classif2_Version_Code = as.character(Classif2_Version_Code),
@@ -106,6 +106,6 @@ X <- X %>%
 		select(-Sex_Version_Code,-Classif1_Version_Code,-Classif2_Version_Code) %>%
 		mutate(	Lang = tolower(Lang)) %>%
 		select(-Topic_code,-COUNTRY_SORT,-SOURCE_SORT,-SURVEY_SORT,-TOPIC_SORT,-INDICATOR_SORT,-SEX_TYPE_SORT, -CLASSIF1_TYPE_SORT, -CLASSIF2_TYPE_SORT, -CLASSIF1_VERSION_SORT, -CLASSIF2_VERSION_SORT, -TIME_ID, -SEX_SORT, -CLASSIF1_SORT, -CLASSIF2_SORT) %>%
-		select_(.dots  = COL_X)
+		select(!!COL_X)
 		
 }

@@ -5,7 +5,6 @@
 #' @param X dataframe to view.
 #' @param apps, option when embed in an apps, default FALSE.
 #' @author ILO bescond
-#' @import DT
 #' @export
  
 DT <- function(X, apps = FALSE){

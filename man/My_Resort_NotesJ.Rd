@@ -17,7 +17,7 @@ resort code efficiently inside one columns in en, fr or sp language
 \examples{
 ################################# use to identify a proper	'DSD'		 
 
-X \%>\%	mutate(	Notes_Indicator_Code 	= mapvalues(Notes_Indicator_Code,	from = levels(as.factor(Notes_Indicator_Code)), 
+X \%>\%	mutate(	Notes_Indicator_Code 	= plyr:::mapvalues(Notes_Indicator_Code,	from = levels(as.factor(Notes_Indicator_Code)), 
 																			to = My_Resort_NotesJ(levels(as.factor(Notes_Indicator_Code)),SEP = "_"), warn_missing = FALSE))
 
 }

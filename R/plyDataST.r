@@ -10,11 +10,12 @@
 plyDataST <- function(Title, ReadMe, mywd, ilo_tpl){
 
 
+
 ###### def var
 Title <- unlist(Title)
 
 
-# Title <- "AUT"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys; ilo_tpl <- ilo_tpl$Mapping_indicator
+# Title <- "AUT"       ; ReadMe <- ReadMeST; mywd <- ilo:::path$sys; ilo_tpl <- ilo_tpl$Mapping_indicator ### EES_TEES_SEX_ECO_GEO_NB
 KEY_ORACLE 	<- c("Country_Code","Indicator_Code","Source_Code","Sex_Version_Code","Classif1_Version_Code","Classif2_Version_Code","Time","Sex_Code","Classif1_Code","Classif2_Code", "Value","Value_Status_Code","Currency_Code","Value_Notes_String","Qtable_Notes_String")
 key_QTA <- KEY_ORACLE[1:7] ; key_ALL <- KEY_ORACLE[1:10]
 statistics <- c(Collected_manual 	= 0, 
@@ -33,7 +34,7 @@ REF_FILE <- as.tbl(ReadMe) %>%
 rm(ReadMe)
 # load all file related to selected country			
 X <- as.list(REF_FILE$ID) %>% 
-			plyr:::ldply(function(x) {load(paste0(mywd, 'ILO_Data/ON_STI_FILES/File',x,'.Rdata')); return(X)}) %>% 
+			plyr:::ldply(function(x) { Y <- readRDS(paste0(mywd, 'ILO_Data/ON_STI_FILES/File',x,'.rds')); return(Y)}) %>% 
 			as.tbl %>%
 			filter(Country_Code%in%Title) %>% 
 			filter( !(str_sub(Source_Code,1,2) %in% 'BE' & !substr(Time,5,5) %in% c('M')))
@@ -41,7 +42,10 @@ rm(REF_FILE)
 			
 ################################## remove exception
 
-X <- X %>% filter(!(Country_Code %in% 'VEN' & Source_Code %in% 'BA:382' & str_sub(Time,5,5) %in% c('Q') & str_detect(Notes_Source_Code, 'R1:3513')))	
+X <- X %>% filter(!(Country_Code %in% 'VEN' & Source_Code %in% 'BA:382' & str_sub(Time,5,5) %in% c('Q') & str_detect(Notes_Source_Code, 'R1:3513'))) %>% 
+			 mutate(Classif1_Code = gsub('COI_COMPO_', 'COI_COMPONENT_', Classif1_Code))
+
+# X <- X %>% filter(Indicator_Code %in% 'UNE_TUNE_NB', str_detect(Classif2_Code, 'DUR_'))
 
 #################################### should be move to load_STI	
 
@@ -168,7 +172,7 @@ for (i in 1:nrow(test)){
 }
 rm(test)
 invisible(gc(reset = TRUE))	
-X <- X %>% 	filter(!(str_sub(Indicator_Code,1,3)%in%c("POP","EAP","EIP") & str_sub(Classif1_Code,1,3) %in% c("ECO", 'STE', "OCU"))) %>% 
+X <- X %>% 	filter(!(str_sub(Indicator_Code,1,3)%in%c("POP","EAP","EIP") & str_sub(Classif1_Code,1,3) %in% c("ECO", 'STE', "OCU") & !str_detect(Indicator_Code , 'POP_3TED') )) %>% 
 			filter(!(Classif1_Code %in% "XXX_XXX_XXX" & !Classif2_Code %in% "XXX_XXX_XXX")) %>% 
 			filter(!str_sub(Classif2_Code,1,3) %in% 'AGE') %>% 
 			mutate(test = ifelse(!Classif1_Code %in% 'XXX_XXX_XXX' & Classif1_Code == Classif2_Code, 1, 0)) %>% 
@@ -183,6 +187,9 @@ test <- Ariane:::COMPUTE$CLASS_NB  %>% as.tbl
 new <- bind_rows(	test %>% filter(COMPUTE %in% 'AGE_YTHADULT_Y15-64', VAR1 %in% 'AGE_AGGREGATE_Y15-24'), 
 					test %>% filter(COMPUTE %in% 'ECO_SECTOR_NAG', VAR1 %in% 'ECO_SECTOR_TOTAL'))			
 test <- new ; rm(new)			
+
+
+
 
 invisible(gc(reset = TRUE))	
 for (i in 1:nrow(test)){
@@ -235,7 +242,8 @@ X <- X %>% mutate(sex_test = str_sub(Sex_Code,1,3), sex_test = ifelse(sex_test %
 			classif2_test = str_sub(Classif2_Code,1,3), classif2_test = ifelse(classif2_test %in% c('NOC', NA), 'XXX', classif2_test)) %>% 
 			left_join(ind_ref, by = c("Indicator_Code", "sex_test", "classif1_test", "classif2_test")) %>% 
 			filter(keep == 1) %>% 
-			select(-sex_test,-classif1_test, -classif2_test)
+			select(-sex_test,-classif1_test, -classif2_test) %>% 
+			filter(!(str_detect(Indicator_Code, 'EMP_2EMP_') & Classif1_Code %in% 'STE_ICSE93_6'))
 			
 rm(ind_ref)			
 invisible(gc(reset = TRUE))				
@@ -356,9 +364,9 @@ X <- X %>%
 							!(substr(Time,5,5) %in% c('Q','M') & substr(Source_Code,1,2) %in% 'BE'), # not process yearly data for BE EULFS adjusted
 							str_sub(Time, 5, -1)%in% unlist(c("",str_split(as.character(test$VAR1[i]), ";"))), 
 							!Add_Repository %in% c('MICRO', 'EUROSTAT'), 
-							!(Country_Code %in% 'VEN' & Source_Code %in% 'BA:382' & str_sub(Time,1,4) %in%c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012')), 
-							!Country_Code %in% c('EGY', 'PSE')), 
-					test[i,])%>% {invisible(gc(reset = TRUE)); .})
+							!Country_Code %in% c('EGY', 'PSE'),
+							!(Country_Code %in% 'VEN' & Source_Code %in% 'BA:382' & str_sub(Time,1,4) %in%c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012'))), 
+							test[i,])%>% {invisible(gc(reset = TRUE)); .})
 } 
 rm(test, i)
 invisible(gc(reset = TRUE))
@@ -438,6 +446,8 @@ X <- X %>%
 					Indicator_Code = ifelse(str_sub(Indicator_Code,6,6) %in% '9', gsub('ECO', 'ECO2', Indicator_Code), Indicator_Code),# prepare eco ocu level 2
 					Indicator_Code = ifelse(str_sub(Indicator_Code,6,6) %in% '9', gsub('OCU', 'OCU2', Indicator_Code), Indicator_Code),
 					Indicator_Code = ifelse(str_sub(Indicator_Code,6,6) %in% '9', gsub('9', 'E', Indicator_Code), Indicator_Code),
+					Classif1_Code = ifelse(nchar(Indicator_Code) %in% 11,  'NOC_VALUE', Classif1_Code ),
+					Indicator_Code = ifelse(nchar(Indicator_Code) %in% 11,  paste0(str_sub(Indicator_Code,1,8), '_NOC',"_",str_sub(Indicator_Code,10,11)),Indicator_Code ),
 					Value_Status_Code = ifelse(Value_Status_Code%in%c(""),NA,Value_Status_Code),
 					Value_Status_Code = as.character(gsub("b","I11:264",Value_Status_Code, fixed = TRUE)),
 					Value_Status_Code = as.character(gsub("c","I11:268",Value_Status_Code, fixed = TRUE)),
@@ -448,13 +458,16 @@ X <- X %>%
 					Value_Status_Code = as.character(gsub("e","E",Value_Status_Code, fixed = TRUE)),
 					Value_Status_Code = as.character(gsub("f","C",Value_Status_Code, fixed = TRUE)), # confidential
 					Value_Status_Code = as.character(gsub("p","P",Value_Status_Code, fixed = TRUE)),
+					Value_Status_Code = as.character(gsub("m","M",Value_Status_Code, fixed = TRUE)),
+					Value_Status_Code = as.character(gsub("i","I",Value_Status_Code, fixed = TRUE)),
 					Value_Status_Code = as.character(gsub("s","S",Value_Status_Code, fixed = TRUE)),
 					Value_Status_Code = as.character(gsub("u","U",Value_Status_Code, fixed = TRUE)),
-					Qtable_Notes_String = ifelse(!Value_Status_Code%in%c("E","C","P","S","U",NA),paste(Qtable_Notes_String,Value_Status_Code,sep="_"),Qtable_Notes_String),
-					Value_Status_Code = ifelse(str_sub(Value_Status_Code,1,1)%in%c("I") & !Value%in%NA,"B",Value_Status_Code),
+					Value_Status_Code = as.character(gsub("r","R",Value_Status_Code, fixed = TRUE)),
+					Qtable_Notes_String = ifelse(!Value_Status_Code%in%c("E","C","P","M",'I',"R","S","U",NA),paste(Qtable_Notes_String,Value_Status_Code,sep="_"),Qtable_Notes_String),
+					Value_Status_Code = ifelse(str_sub(Value_Status_Code,1,3)%in%c("I11") & !Value%in%NA,"B",Value_Status_Code),
 					Qtable_Notes_String = gsub("NA_","",Qtable_Notes_String),
 					Qtable_Notes_String = ifelse(Qtable_Notes_String%in%"NA",NA,Qtable_Notes_String),
-					Value_Status_Code = ifelse(!Value_Status_Code%in%c("B","C","E","P","S","U",NA),NA,Value_Status_Code),
+					Value_Status_Code = ifelse(!Value_Status_Code%in%c("B","C","R","E",'I',"P", "M","S","U",NA),NA,Value_Status_Code),
 					Sex_Code = as.character(gsub("XXX_X",NA,Sex_Code, fixed = TRUE)),
 					Classif1_Code = as.character(gsub("XXX_XXX_XXX",NA,Classif1_Code, fixed = TRUE)),
 					Classif2_Code = as.character(gsub("XXX_XXX_XXX",NA,Classif2_Code, fixed = TRUE)))%>% 
@@ -487,7 +500,7 @@ X <- X %>%
 					Source_Code = as.character(parse_number(Source_Code)),
 					Country_Code = as.character(Country_Code)) %>%
 		mutate(Value_Status_Code = toupper(Value_Status_Code)) %>% 	
-		mutate_all(funs(factor)) %>% 
+		mutate_all(.funs = factor) %>% 
 		mutate(Value = as.numeric(as.character(Value))) # %>%  ########## Exception IDN %>% 
 		# filter(!(Country_Code %in% "IDN" & Classif1_Code %in% "AGE_AGGREGATE_YGE65")) 
 		
@@ -554,12 +567,13 @@ X <- X %>%
 					!(Value%in%NA & Value_Status_Code%in%NA) 
 		)
 
-X <- X %>% mutate_all(funs(as.character))
+X <- X %>% mutate_all(.funs = as.character)
 invisible(gc(reset = TRUE))		
 
 
 ##################### ADD OECD data from query
-REF_OECD <- c('AUS', 'AUT', 'CHE', 'COL', 'CZE', 'EST', 'FIN', 'FRA', 'HUN', 'ISL', 'ISR', 'JPN', 'KOR', 'MEX', 'NOR', 'NZL', 'POL', 'RUS', 'SVK', 'SWE', 'TUR', 'ZAF', 'CHL', 'CRI')
+# REF_OECD <- c('AUS', 'AUT', 'CHE', 'COL', 'CZE', 'EST', 'FIN', 'FRA', 'HUN', 'ISL', 'ISR', 'JPN', 'KOR', 'MEX', 'NOR', 'NZL', 'POL', 'RUS', 'SVK', 'SWE', 'TUR', 'ZAF', 'CHL', 'CRI')
+REF_OECD <- c("AUS", "AUT", "CHE", "CHL", "COL", "CRI", "CZE", "EST", "FIN", "HUN", "ISL", "ISR", "JPN", "KOR", "MEX", "NOR", "NZL", "POL", "RUS", "SVK", "SWE", "TUR", "ZAF")
 
 
 if(unique(X$Country_Code) %in% REF_OECD){
@@ -571,9 +585,9 @@ test <- X %>% filter((!str_sub(Time,5,5) %in% c('Q','M') &  Indicator_Code %in% 
 if(nrow(test)>0){
 	# delete Annual data from Bulk
 	X <- X %>% filter(!(!str_sub(Time,5,5) %in% c('Q','M') & Indicator_Code %in% IND_OECD))
-	cou <- unique(X$Country_Code)
-	# Upload eurostat Annual from Query
-	Y <- read_rds(paste0(ilo:::path$data, 'REP_OECD/LFS_ANNUAL/output/',cou,'.rds')) %>% mutate_all(funs(as.character)) %>%
+	cou <- unique(test$Country_Code)
+	# Upload oecd Annual from Query
+	Y <- read_rds(paste0(ilo:::path$data, 'REP_OECD/LFS_ANNUAL/output/',cou,'.rds')) %>% mutate_all(.funs = as.character) %>%
 					mutate( source = parse_number(source) %>% as.character, 
 							classif1 = ifelse(classif1 %in% NA, 'XXX_XXX_XXX', classif1), 
 							classif1 = ifelse(classif1 %in% NA, 'XXX_XXX_XXX', classif1)		
@@ -581,7 +595,7 @@ if(nrow(test)>0){
 					select(ref_area, indicator, source, sex, sex_version, classif1, classif1_version, classif2, classif2_version, time, obs_value , obs_status, note_classif, note_source) %>% 
 					filter(indicator %in% IND_OECD)
 			
-colnames(Y) <- c("Country_Code",'Indicator_Code', "Source_Code","Sex_Code", 'Sex_Version_Code', "Classif1_Code", 'Classif1_Version_Code',"Classif2_Code", 'Classif2_Version_Code',"Time", "Value",'Value_Status_Code', 'Value_Notes_String', 'Qtable_Notes_String')
+	colnames(Y) <- c("Country_Code",'Indicator_Code', "Source_Code","Sex_Code", 'Sex_Version_Code', "Classif1_Code", 'Classif1_Version_Code',"Classif2_Code", 'Classif2_Version_Code',"Time", "Value",'Value_Status_Code', 'Value_Notes_String', 'Qtable_Notes_String')
 
 	Y <- Y %>% 
 			checkDataEmptyST %>% 
@@ -624,7 +638,7 @@ KEY_ORACLE 	<- c("Country_Code","Indicator_Code","Source_Code","Sex_Version_Code
 		
 statistics["Calculated"] <- nrow(X %>% filter(str_sub(Add_Status,2,2)%in%"C"))
 
-X <- X %>% select_(.dots  = KEY_ORACLE) %>% 
+X <- X %>% select(!!KEY_ORACLE) %>% 
 		mutate(	Qtable_Notes_String = stringr::str_trim(Qtable_Notes_String),
 				Qtable_Notes_String = plyr:::mapvalues(Qtable_Notes_String,c('NaN', '', 'NA'), c(NA,NA, NA), warn_missing = FALSE),
 				Value_Notes_String = stringr::str_trim(Value_Notes_String),
@@ -641,7 +655,7 @@ X <- X %>% 	rename(Survey_Id = Source_Code) %>%
 				Collection_Code = 'STI', 
 				Source_Code = Survey_Id %>% plyr:::mapvalues(	from 	= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_ID, 
 																to 		= 	Ariane:::CODE_ORA$T_SUR_SURVEY$SUR_SOURCE_CODE, warn_missing = FALSE) ) %>% 
-		sortDataOracle %>% 	
+		# sortDataOracle %>% 	
 		rename(	collection = Collection_Code, 
 				ref_area = Country_Code, 
 				indicator = Indicator_Code, 
@@ -660,8 +674,7 @@ X <- X %>% 	rename(Survey_Id = Source_Code) %>%
 																			to = My_Resort_NotesJ(levels(as.factor(note_classif)),SEP = "_"), warn_missing = FALSE),
 				Qtable_Notes_String = Qtable_Notes_String %>% My_Resort_Notes_Type(SEP = '_',addsep  =TRUE), 
 				Qtable_Notes_String = Qtable_Notes_String %>% stringr::str_replace(stringr::fixed('|'), '/')) %>% 
-		separate(col = Qtable_Notes_String, into = c('note_source','note_indicator'), sep  = stringr::fixed("/"), remove = TRUE, fill = 'left') %>% 
-		
+		separate(col = Qtable_Notes_String, into = c('note_source','note_indicator'), sep  = stringr::fixed("/"), remove = TRUE, fill = 'left') %>% 	
 		unite(source, Source_Code, Survey_Id, sep = ':', remove = TRUE) %>% 
 		mutate(	freq_code = str_sub(time, 5,5), 
 				freq_code = ifelse(freq_code %in% '', 'A',freq_code), 
@@ -669,23 +682,33 @@ X <- X %>% 	rename(Survey_Id = Source_Code) %>%
 				obs_value = round(obs_value,4)		, 
 				note_source	= ifelse(note_source %in% '', as.character(NA), as.character(note_source)),
 				note_indicator	= ifelse(note_indicator %in% '', as.character(NA), as.character(note_indicator)))  %>% 
-		select_(.dots = c("collection", "ref_area", "source", "indicator", "sex", "sex_version", "classif1", "classif1_version", "classif2", "classif2_version", "time", "obs_value", "obs_status", "note_classif", "note_indicator", "note_source", "freq_code")) %>% 
-		mutate_if(is.factor, as.character) %>% 
+		select(!!c("collection", "ref_area", "source", "indicator", "sex", "sex_version", "classif1", "classif1_version", "classif2", "classif2_version", "time", "obs_value", "obs_status", "note_classif", "note_indicator", "note_source", "freq_code")) %>% 
 		mutate(classif1_version = ifelse(classif1 %in% 'NOC_VALUE', 'NOC', classif1_version))  %>% 
 		filter(!(indicator %in% c("UNE_TUNE_SEX_OCU_NB", "UNE_TUNE_SEX_ECO_NB") & str_sub(source,1,2) %in% c('FA','FB','FX','BE'))) %>%
-		filter(!(str_detect(source, 'BE') & str_sub(time, 5,5) %in% c('Q', ''))) 
-		
+		filter(!(str_detect(source, 'BE') & str_sub(time, 5,5) %in% c('Q', ''))) %>%
+		sortDataOracle_oracle_format() %>% 
+		mutate_if(is.factor, as.character) 
+				
 ################################# reduce scope
+
+
+invisible(gc(reset = TRUE))
+invisible(gc(reset = TRUE))
+					
 
 		
 ############# clean up Value_Status_Code 
 
 X <- X %>% 
 		mutate(	obs_value = ifelse(obs_status %in% 'S', as.character(NA), obs_value), 
-				 obs_status = ifelse(obs_status %in% 'S', 'U', obs_status), 
-				 obs_value  = as.numeric(obs_value)) 
+				obs_status = ifelse(obs_status %in% 'S', 'U', obs_status), 
+				obs_value  = as.numeric(obs_value)) 
+		
+invisible(gc(reset = TRUE))
 invisible(gc(reset = TRUE))
 					
+
+	
 					
 
 TEST_FRAMEWORK <- ilo_tpl %>% select(Is_Validate, indicator, sex_version = sex_var, classif1_version =  classif1_var , classif2_version = classif2_var, frequency) %>%   filter(Is_Validate %in% 'TRUE') %>%
@@ -706,16 +729,16 @@ rm(TEST_FRAMEWORK, TEST_FRAMEWORK_indicator )
 #########################################################################
 ############# TEST Distribution 'full'
 #########################################################################
-test <- Ariane:::COMPUTE$INDICATOR_FULL_DT  
+# test <- Ariane:::COMPUTE$INDICATOR_FULL_DT  
 
-for (i in 1:nrow(test)){
-	checkDataIndicatorDistributionFULLST(X %>% 
-					filter(	indicator %in% test$VAR1[i]), 
-					test[i,], mywd)
-	invisible(gc(reset = TRUE))
-}
-rm(test, i)
-invisible(gc(reset = TRUE))
+# for (i in 1:nrow(test)){
+	# checkDataIndicatorDistributionFULLST(X %>% 
+					# filter(	indicator %in% test$VAR1[i]), 
+					# test[i,], mywd)
+	# invisible(gc(reset = TRUE))
+# }
+# rm(test, i)
+# invisible(gc(reset = TRUE))
 		
 #########################################################################
 ############# COMPUTE Distribution intra
@@ -740,6 +763,7 @@ invisible(gc(reset = TRUE))
 
 ############## benchmark exception
 
+X <- X %>% mutate(obs_value = ifelse(obs_status %in% 'U' & obs_value %in% '0', NA, obs_value))
 
 X <- X %>% filter(!(ref_area %in% 'TUR' & source %in% 'BA:2256' & str_detect(time, '2008') & str_detect(indicator, 'ECO')))
 X <- X %>% filter(!(ref_area %in% 'MKD' & source %in% 'BA:2239' & str_detect(time, '2008|2009|2010') & str_detect(indicator, 'ECO'))) 
@@ -759,8 +783,48 @@ statistics["Migration"] <- nrow(X)
 	X <- X %>% 	select(-collection) %>% 
 				left_join(test_collection, by = c('indicator', 'freq_code')) %>% 
 				filter(!collection %in% NA) %>% 
-				select_(.dots = c("collection", "ref_area", "source", "indicator", "sex", "sex_version", "classif1", "classif1_version", "classif2", "classif2_version", "time", "obs_value", "obs_status", "note_classif", "note_indicator", "note_source", "freq_code")) 
+				select(!!c("collection", "ref_area", "source", "indicator", "sex", "sex_version", "classif1", "classif1_version", "classif2", "classif2_version", "time", "obs_value", "obs_status", "note_classif", "note_indicator", "note_source", "freq_code")) 
 		
+invisible(gc(reset = TRUE))
+invisible(gc(reset = TRUE))
+	
+		
+		
+		
+		
+############# clean up unrealable tables NON microdata.
+
+
+X <- X %>% Ariane:::benchmarkUtables() %>%
+			 mutate(test = str_detect(note_source, 'R1:3513')) %>% 
+			filter( ! (table_test > 0.3339 & test %in% c(NA, FALSE) & str_sub(time,5,5) %in% '' )) %>% 
+			select(-table_test, -test)
+			
+invisible(gc(reset = TRUE))	
+invisible(gc(reset = TRUE))
+
+
+	
+
+########################################################################################
+############# TEST all age 'full'
+#########################################################################
+
+X <- bind_rows(X, 
+				Ariane:::testAllage(X %>% 
+					filter(	indicator %in% 'POP_XWAP_SEX_AGE_NB', str_sub(time,5,5) %in% '')
+				)
+				)				
+	invisible(gc(reset = TRUE))
+	invisible(gc(reset = TRUE))
+	
+
+
+
+
+
+
+
 	
 	#test <- unique(X$freq_code)
 
@@ -774,18 +838,26 @@ statistics["Migration"] <- nrow(X)
 			X %>% filter(freq_code %in% ref$freq_code[i], 
 						 collection %in% ref$collection[i]) %>%
 					filter(!(ref_area %in% 'ALB' & source %in% 'BA:480' & str_detect(note_source, 'R1:3903') & str_sub(indicator, -3,-1) %in% '_RT')) %>% 
-					filter(!(ref_area %in% c('ALB', 'AZE', 'BHS', 'BLZ', 'BRB', 'CHL','CUB', 'HKG',  'IRN','KAZ', 'KGZ', 'LKA','LVA', 'MAR', 'MDA', 'MYS', 'QAT', 'SGP', 'SUR','SAU', 'SYR','THA', 'TTO', 'VEN') 
+					filter(!(ref_area %in% c('ALB', 'AZE', 'BHS', 'BLZ', 'BRB', 'CHL','CUB', 'HKG',  'IRN','KAZ', 'KGZ', 'LKA','LVA', 'MAR', 'MDA', 'MYS', 'QAT', 'SGP', 'SUR','SAU', 'SYR', 'TTO', 'VEN') 
 								& str_sub(source,1,2) %in% 'BA' 
 								& str_detect(note_source, 'R1:3902') 
 								& str_sub(indicator, -3,-1) %in% c('_RT', '_DT'))) %>% 
 					filter(!(ref_area %in% 'BRA' & source %in% 'BA:3047'))	%>%		
 					filter(!(ref_area %in% 'SMR' & source %in% 'EA:5918' & str_detect(note_source, 'R1:3902') & str_sub(indicator, -3,-1) %in% c('_RT', '_DT')))	%>% 		
-					filter(!(ref_area %in% 'SGP' & source %in% 'BA:5873' & str_detect(note_source, 'R1:3902') & as.numeric(time) >2016) )	%>% 		
+					filter(!(ref_area %in% 'SGP' & source %in% 'BA:5873' & str_detect(note_source, 'R1:3902')) )	%>% 		
+					filter(!(ref_area %in% 'HKG' & source %in% 'BA:231' & str_detect(note_source, 'R1:3902') & as.numeric(time) > 1990 & as.numeric(time) < 2009 & str_detect(indicator, '_ECO_')))	%>% 		
+					filter(!(
+								ref_area %in% 'THA' & str_detect(source, 'BA') & str_detect(note_source, 'R1:3902') &  
+								(	
+								str_sub(indicator, -3,-1) %in% c('_RT') )
+										))	%>% 		
+					filter(!(
+								ref_area %in% 'THA' & str_detect(source, 'BA') & str_detect(note_source, 'R1:3902') & str_sub(indicator, -3,-1) %in% c('_DT')  &  !(indicator %in% 'EMP_TEMP_SEX_ECO_DT' & as.numeric(time) > 2003 & as.numeric(time) < 2010)
+										))	%>% 
 					filter(!(ref_area %in% 'BLZ' & source %in% 'BA:934' & str_detect(note_source, 'R1:3902') & str_detect(time, '2017') ))	%>% 		
 					filter(!(ref_area %in% 'BRB' & source %in% 'BA:338' & str_detect(note_source, 'R1:3902') & str_detect(indicator, 'EAP_TEAP') ))	%>% 		
 					filter(!(ref_area %in% 'MYS' & source %in% 'BA:544' & str_detect(note_source, 'R1:3902') & str_detect(indicator, '_DT') ))	%>% 		
 					filter(!(ref_area %in% 'ARM' & source %in% 'BB:173' & str_detect(note_source, 'R1:3902')))	%>% 
-					mutate(indicator = gsub('MST_XWAP_SEX_AGE_', 'MST_TPOP_SEX_AGE_', indicator)) %>%
 					saveRDS(., file = paste0(ilo:::path$sys, 'ILO_Data/STI/',ref$collection[i],'_',Title,'_',ref$freq_code[i],'.rds'))
 			
 			X <- X %>% filter(!(freq_code %in% ref$freq_code[i] & collection %in% ref$collection[i]))
@@ -1124,7 +1196,7 @@ if(length(VARUM)>1){
 							Value_Status_Code= ifelse(!Value_Status_Code.1%in%c("",NA,NaN),Value_Status_Code.1,Value_Status_Code),
 							Value_Status_Code = as.character(Value_Status_Code)	) 
 
-		CALCUL <- CALCUL %>% select_(.dots  = c("KEY",NEW_COLNAME,"Value","Value.1"))
+		CALCUL <- CALCUL %>% select(!!c("KEY",NEW_COLNAME,"Value","Value.1"))
 
 		if(MY_CALCULATION$USE%in%"MEAN")	{
 			CALCUL <- CALCUL %>% 
@@ -1192,7 +1264,7 @@ if(length(VARUM)>1){
 							Value_Status_Code= ifelse(!Value_Status_Code.1%in%c("",NA,NaN),Value_Status_Code.1,Value_Status_Code),
 							Value_Status_Code = as.character(Value_Status_Code)	) 
 
-		CALCUL <- CALCUL %>% select_(.dots  = c("KEY",NEW_COLNAME,"Value","Value.1"))
+		CALCUL <- CALCUL %>% select(!!c("KEY",NEW_COLNAME,"Value","Value.1"))
 
 	if(MY_CALCULATION$USE%in%"MEAN"){
 		CALCUL <- CALCUL %>% mutate(Value = Value + Value.1)
@@ -1293,7 +1365,7 @@ if(!plyr:::empty(C_X) & !plyr:::empty(C_Y)){
 	CALCUL <- CALCUL %>% mutate(Value_Status_Code = ifelse((!Value_Status_Code.1%in%c("",NA,NaN) & Value%in%NA),Value_Status_Code.1,Value_Status_Code),
 								Value_Status_Code = as.character(Value_Status_Code)	) %>% select(-Value_Status_Code.1) 
 
-	CALCUL <- CALCUL %>% select_(.dots  = c("KEY",NEW_COLNAME,"Value","Value.1"))
+	CALCUL <- CALCUL %>% select(!!c("KEY",NEW_COLNAME,"Value","Value.1"))
 
 
 	if(!plyr:::empty(CALCUL)){
@@ -1329,7 +1401,7 @@ if(nrow(X) == 0) return(NULL)
 group <- c(c("ref_area", "source", "indicator", 'time'), unlist(str_split(as.character(MY_CALCULATION$VAR2), ";")))
 options(warn = -1)	
 X <- X %>% 	
-		group_by_(.dots = group) %>% 
+		group_by_at(.vars = group) %>% 
 		mutate(obs_value = obs_value / max(obs_value, na.rm = TRUE) * 100) %>% 
 		ungroup %>% 
 		mutate(	indicator = MY_CALCULATION$COMPUTE, 
@@ -1393,6 +1465,8 @@ DEL 	<- c(		"GEO_COV_NAT | GEO_COV_X","GEO_COV_X | GEO_COV_NAT",
 					"ECO_ISIC3_TOTAL | ECO_ISIC3_X","ECO_ISIC3_X | ECO_ISIC3_TOTAL",
 					"ECO_ISIC4_TOTAL | ECO_ISIC4_X","ECO_ISIC4_X | ECO_ISIC4_TOTAL",
 					"ECO_SECTOR_TOTAL | ECO_SECTOR_X","ECO_SECTOR_X | ECO_SECTOR_TOTAL",
+					"CBR_BIR_X | CBR_BIR_TOTAL", "CBR_BIR_TOTAL | CBR_BIR_X",
+					"CCT_CIT_X | CCT_CIT_TOTAL", "CCT_CIT_TOTAL | CCT_CIT_X",
 					"HOW_BANDS_TOTAL | HOW_BANDS_X", "HOW_BANDS_X | HOW_BANDS_TOTAL",
 					"OCU_AGGREGATE_TOTAL | OCU_AGGREGATE_X","OCU_AGGREGATE_X | OCU_AGGREGATE_TOTAL",
 					"OCU_SKILL_TOTAL | OCU_SKILL_X","OCU_SKILL_X | OCU_SKILL_TOTAL",
@@ -1401,6 +1475,8 @@ DEL 	<- c(		"GEO_COV_NAT | GEO_COV_X","GEO_COV_X | GEO_COV_NAT",
 					"STE_ICSE93_TOTAL | STE_ICSE93_6", "STE_ICSE93_6 | STE_ICSE93_TOTAL",
 					"STE_ICSE93_TOTAL | STE_ICSE93_1 | STE_ICSE93_3", "STE_ICSE93_1 | STE_ICSE93_3 | STE_ICSE93_TOTAL",
 					"STE_AGGREGATE_TOTAL | STE_AGGREGATE_X","STE_AGGREGATE_X | STE_AGGREGATE_TOTAL",
+					"JOB_TIME_TOTAL | JOB_TIME_X","JOB_TIME_X | JOB_TIME_TOTAL",
+					"JOB_CONTRACT_TOTAL | JOB_CONTRACT_X","JOB_CONTRACT_X | JOB_CONTRACT_TOTAL",
 					"EDU_AGGREGATE_TOTAL | EDU_AGGREGATE_X","EDU_AGGREGATE_X | EDU_AGGREGATE_TOTAL",
 					"EDU_ISCED97_TOTAL | EDU_ISCED97_UNK","EDU_ISCED97_UNK | EDU_ISCED97_TOTAL",
 					"EDU_ISCED11_TOTAL | EDU_ISCED11_9","EDU_ISCED11_X | EDU_ISCED11_TOTAL",
@@ -1413,8 +1489,11 @@ DEL 	<- c(		"GEO_COV_NAT | GEO_COV_X","GEO_COV_X | GEO_COV_NAT",
 					"AGE_10YRBANDS_TOTAL",
 					"AGE_5YRBANDS_TOTAL",
 					"JOB_TIME_TOTAL",
+					"JOB_CONTRACT_TOTAL",
 					"AGE_YTHADULT_Y15-64",
 					"AGE_AGGREGATE_TOTAL",
+					"CCT_CIT_TOTAL",
+					"CBR_BIR_TOTAL",
 					"AGE_YTHADULT_YGE15", 
 					"EDU_ISCED97_TOTAL",
 					'EDU_ISCED11_TOTAL',
@@ -1534,7 +1613,7 @@ if(!plyr:::empty(C_X) & !plyr:::empty(C_Y)){
 	CALCUL <- CALCUL %>% mutate(Value_Status_Code = ifelse((!Value_Status_Code.1%in%c("",NA,NaN) & Value%in%NA),Value_Status_Code.1,Value_Status_Code),
 								Value_Status_Code = as.character(Value_Status_Code)	) %>% select(-Value_Status_Code.1) 
 
-	CALCUL <- CALCUL %>% select_(.dots  = c("KEY",NEW_COLNAME,"Value","Value.1"))
+	CALCUL <- CALCUL %>% select(!!c("KEY",NEW_COLNAME,"Value","Value.1"))
 
 
 	if(!plyr:::empty(CALCUL)){
@@ -1573,7 +1652,7 @@ X %>%
 		unite_("ID", c("Country_Code", "Source_Code", "Indicator_Code","Sex_Code","Classif1_Code","Classif2_Code", "Year", "Value_Status_Code", "Freq_Code", "Notes_Classif_Code", "Notes_Indicator_Code", "Notes_Source_Code", "Currency_Code"), sep="/", remove = TRUE) %>% 
 		gather(Time, Value, -ID) %>% mutate(Time = as.character(Time)) %>%
 		separate(ID, c("Country_Code", "Source_Code", "Indicator_Code","Sex_Code","Classif1_Code","Classif2_Code", "Year", "Value_Status_Code", "Freq_Code", "Notes_Classif_Code", "Notes_Indicator_Code", "Notes_Source_Code", "Currency_Code"), sep="/", remove = TRUE) %>% 
-		mutate_all(funs(mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>%
+		mutate_all(funs(plyr:::mapvalues(.,c('NaN', '', ' ', 'NA'), c(NA, NA, NA, NA), warn_missing = FALSE))) %>%
 		filter(!Value%in%c(NA,"","NA") | !Value_Status_Code%in%c("",NA,"NA")) %>%
 		mutate(	Time = ifelse(!Time%in%"Y",paste0(Year,Time),Year),
 				Value = as.numeric(Value)) %>%		
@@ -1681,13 +1760,15 @@ DEL 	<- c(		"GEO_COV_NAT | GEO_COV_X","GEO_COV_X | GEO_COV_NAT",
 					"ECO_ISIC3_TOTAL | ECO_ISIC3_X","ECO_ISIC3_X | ECO_ISIC3_TOTAL",
 					"ECO_ISIC4_TOTAL | ECO_ISIC4_X","ECO_ISIC4_X | ECO_ISIC4_TOTAL",
 					"ECO_SECTOR_TOTAL | ECO_SECTOR_X","ECO_SECTOR_X | ECO_SECTOR_TOTAL",
+					"CBR_BIR_TOTAL | CBR_BIR_X", "CBR_BIR_X | CBR_BIR_TOTAL",
+					"CCT_CIT_TOTAL | CCT_CIT_X","CCT_CIT_X | CCT_CIT_TOTAL",
 					"HOW_BANDS_TOTAL | HOW_BANDS_X", "HOW_BANDS_X | HOW_BANDS_TOTAL",
 					"OCU_AGGREGATE_TOTAL | OCU_AGGREGATE_X","OCU_AGGREGATE_X | OCU_AGGREGATE_TOTAL",
 					"OCU_SKILL_TOTAL | OCU_SKILL_X","OCU_SKILL_X | OCU_SKILL_TOTAL",
 					"OCU_ISCO88_TOTAL | OCU_ISCO88_X","OCU_ISCO88_X | OCU_ISCO88_TOTAL",
 					"OCU_ISCO08_TOTAL | OCU_ISCO08_X","OCU_ISCO08_X | OCU_ISCO08_TOTALOCU_ISCO08_X",
 					"STE_ICSE93_TOTAL | STE_ICSE93_6", "STE_ICSE93_6 | STE_ICSE93_TOTAL",
-					"STE_ICSE93_TOTAL | STE_ICSE93_1 | STE_ICSE93_3", "STE_ICSE93_1 | STE_ICSE93_3 | STE_ICSE93_TOTAL",
+					"STE_ICSE93_TOTAL | STE_ICSE93_1 | STE_ICSE93_3", "STE_ICSE93_1 | STE_ICSE93_3 | STE_ICSE93_TOTAL", "STE_ICSE93_TOTAL | STE_ICSE93_3 | STE_ICSE93_1", "STE_ICSE93_3 | STE_ICSE93_1 | STE_ICSE93_TOTAL", 
 					"STE_AGGREGATE_TOTAL | STE_AGGREGATE_X","STE_AGGREGATE_X | STE_AGGREGATE_TOTAL",
 					"JOB_TIME_TOTAL | JOB_TIME_X","JOB_TIME_X | JOB_TIME_TOTAL",
 					"JOB_CONTRACT_TOTAL | JOB_CONTRACT_X","JOB_CONTRACT_X | JOB_CONTRACT_TOTAL",
@@ -1706,6 +1787,8 @@ DEL 	<- c(		"GEO_COV_NAT | GEO_COV_X","GEO_COV_X | GEO_COV_NAT",
 					"JOB_CONTRACT_TOTAL",
 					"AGE_YTHADULT_Y15-64",
 					"AGE_AGGREGATE_TOTAL",
+					"CCT_CIT_TOTAL",
+					"CBR_BIR_TOTAL",
 					# "AGE_YTHADULT_YGE15", #keep for storing total only
 					"EDU_ISCED97_TOTAL",
 					'EDU_ISCED11_TOTAL',
@@ -1764,6 +1847,55 @@ X %>% 	filter(!(Classif1_Version_Code%in%NA & !Classif2_Version_Code%in%NA) ) %>
 		
 }
 
+#' @export
+
+testAllage <- function(X){
+
+if(nrow(X) == 0) return(NULL)
+
+
+X %>% mutate(indicator = 'POP_XTTT_SEX_AGE_NB', 
+					classif1 = classif1 %>% recode(
+'AGE_5YRBANDS_TOTAL' = 'AGE_ALLAGES_YGE15',
+#'AGE_5YRBANDS_Y00-04' = 'AGE_ALLAGES_Y00-04',
+#'AGE_5YRBANDS_Y05-09' = 'AGE_ALLAGES_Y05-09',
+#'AGE_5YRBANDS_Y10-14' = 'AGE_ALLAGES_Y10-14',
+'AGE_5YRBANDS_Y15-19' = 'AGE_ALLAGES_Y15-19',
+'AGE_5YRBANDS_Y20-24' = 'AGE_ALLAGES_Y20-24',
+'AGE_5YRBANDS_Y25-29' = 'AGE_ALLAGES_Y25-29',
+'AGE_5YRBANDS_Y30-34' = 'AGE_ALLAGES_Y30-34',
+'AGE_5YRBANDS_Y35-39' = 'AGE_ALLAGES_Y35-39',
+'AGE_5YRBANDS_Y40-44' = 'AGE_ALLAGES_Y40-44',
+'AGE_5YRBANDS_Y45-49' = 'AGE_ALLAGES_Y45-49',
+'AGE_5YRBANDS_Y50-54' = 'AGE_ALLAGES_Y50-54',
+'AGE_5YRBANDS_Y55-59' = 'AGE_ALLAGES_Y55-59',
+'AGE_5YRBANDS_Y60-64' = 'AGE_ALLAGES_Y60-64',
+'AGE_5YRBANDS_YGE65' = 'AGE_ALLAGES_YGE65',
+'AGE_10YRBANDS_TOTAL' = 'AGE_ALLAGES_YGE15',
+'AGE_10YRBANDS_Y15-24' = 'AGE_ALLAGES_Y15-24',
+'AGE_10YRBANDS_Y25-34' = 'AGE_ALLAGES_Y25-34',
+'AGE_10YRBANDS_Y35-44' = 'AGE_ALLAGES_Y35-44',
+'AGE_10YRBANDS_Y45-54' = 'AGE_ALLAGES_Y45-54',
+'AGE_10YRBANDS_Y55-64' = 'AGE_ALLAGES_Y55-64',
+'AGE_10YRBANDS_YGE65' = 'AGE_ALLAGES_YGE65',
+'AGE_AGGREGATE_TOTAL' = 'AGE_ALLAGES_YGE15',
+'AGE_AGGREGATE_Y15-24' = 'AGE_ALLAGES_Y15-24',
+'AGE_AGGREGATE_Y55-64' = 'AGE_ALLAGES_Y55-64',
+'AGE_AGGREGATE_YGE65' = 'AGE_ALLAGES_YGE65',
+'AGE_AGGREGATE_Y25-54' = 'AGE_ALLAGES_Y25-54',
+'AGE_YTHADULT_YGE15' = 'AGE_ALLAGES_YGE15',
+'AGE_YTHADULT_Y15-24' = 'AGE_ALLAGES_Y15-24',
+'AGE_YTHADULT_Y15-64' = 'AGE_ALLAGES_Y15-64',
+'AGE_YTHADULT_YGE25' = 'AGE_ALLAGES_YGE25'				
+					
+					) , 
+		classif1_version = 'AGE_ALLAGES') %>% distinct(sex, classif1, time, .keep_all = TRUE) %>%
+		sortDataOracle_oracle_format() %>% 
+		mutate_if(is.factor, as.character) 
+									
+
+
+}
 
 #' @export
 
@@ -1776,7 +1908,7 @@ group <- c(c("ref_area", "source", "indicator", 'time'), unlist(str_split(as.cha
 options(warn = -1)	
 X <- X %>% 	
 		mutate(obs_value = as.numeric(obs_value)) %>%
-		group_by_(.dots = group) %>% 
+		group_by_at(.vars = group) %>% 
 		mutate(obs_value = obs_value / max(obs_value, na.rm = TRUE) * 100) %>% 
 		ungroup %>% 
 		mutate(	indicator = MY_CALCULATION$COMPUTE, 
@@ -1837,7 +1969,6 @@ if(!plyr:::empty(X)){
 }
 
 #' @export
-
 
 checkDataFrequencyST <- function(X){
 key 		<- c("Country_Code", "Source_Code", "Indicator_Code","Sex_Code","Classif1_Code","Classif2_Code")
@@ -1943,5 +2074,33 @@ invisible(gc(reset = TRUE))
 
 X %>% 	bind_rows(SKIP) %>% 
 		select(-KEY) %>%
-		filter(!Value%in%NA | (!Value_Status_Code%in%c(NA,"",NaN) & substr(as.character(Time),5,5)%in%"M"))
+		mutate(Value_Status_Code = ifelse(Value_Status_Code %in% c(NA,"",NaN), NA, Value_Status_Code)) %>% 
+		filter(!(Value%in%NA & Value_Status_Code %in%NA ) )  
+			
+		
 }
+
+
+benchmarkUtables <- function(X){
+
+
+ X  %>% mutate(	countU  = ifelse(!obs_status %in% NA & obs_value %in% NA, 1, 0), 
+				countRecords1 =  str_detect(classif1, 'ISIC2_0|ICSE93_6|_X'), 
+				countRecords1 =  ifelse(!countRecords1 %in% c(NA, FALSE), 0,1), 
+				countRecords2 =  str_detect(classif2 , 'ISIC2_0|ICSE93_6|_X'), 
+				countRecords2 = ifelse(!countRecords2 %in% c(NA, FALSE), 0,1), 
+				countRecords =  ifelse(countRecords1 %in% 1 | countRecords2 %in% 1,1, 0),  
+				countU = ifelse(countRecords == 0, 0, countU)) %>% 
+			select(-countRecords1, -countRecords2) %>%
+			group_by( collection, ref_area, source, indicator, sex_version, classif1_version, classif2_version, time) %>% 
+			mutate( sumRecords = sum(countRecords, na.rm = TRUE), 
+					sumU = sum(countU, na.rm = TRUE), 
+					table_test = ifelse(sumU  != 0, sumU / sumRecords, 0), 
+					table_test = max(table_test, na.rm = TRUE) ) %>% 
+			ungroup %>% 
+			select(-countU, -sumRecords, -sumU, -countRecords) 
+			
+	
+}
+
+

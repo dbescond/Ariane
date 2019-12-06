@@ -19,6 +19,8 @@
 #'  head(res)					
 
 #' @export
+
+
 getDataOracle <- function(data_query, con ){
 # data_query <- "where Country_Code in ('AUS') and TIME_FREQ in ('A')" 
 #require(rJava)
@@ -322,7 +324,7 @@ col_data_out <- c("COUNTRY_CODE","COLLECTION_CODE","INDICATOR_CODE","SOURCE_CODE
 	col_data_out <- c("COUNTRY_CODE","COLLECTION_CODE","INDICATOR_CODE","SOURCE_CODE","SURVEY_ID","SEX_VERSION_CODE","CLASSIF1_VERSION_CODE","CLASSIF2_VERSION_CODE","SEX_CODE","CLASSIF1_CODE","CLASSIF2_CODE","TIME_FREQ","TIME","VALUE","VALUE_STATUS_CODE","CURRENCY_CODE","NOTES_SOURCE_CODE","NOTES_INDICATOR_CODE","NOTES_CLASSIF_CODE","LAST_STATUS","LOAD_MODE", "QTA_LAST_CHECK_DATE", "QTA_CHECK_STATUS", "QTA_CHECK_USER", "QTA_CHANNEL", "WEB")
 
 
-X 	<- 	X %>% select_(.dots  = col_data_out)
+X 	<- 	X %>% select(!!col_data_out)
 rm(col_data_out)
 
 colnames(X) <-  gsub('_' , ' ', tolower(colnames(X)), fixed = TRUE) %>% gsub('\\b(\\w)'	, '\\U\\1', ., perl=TRUE) %>%	 gsub(' ' , '_', ., fixed = TRUE)
@@ -342,9 +344,9 @@ X <- X %>%
 																			to = My_Resort_NotesJ(levels(as.factor(Notes_Source_Code)),SEP = "_"), warn_missing = FALSE),
 				Notes_Classif_Code 		= plyr:::mapvalues(Notes_Classif_Code,		from = levels(as.factor(Notes_Classif_Code)), 
 																			to = My_Resort_NotesJ(levels(as.factor(Notes_Classif_Code)),SEP = "_"), warn_missing = FALSE)) %>%
-		sortDataOracle	%>% 
-		mutate_all(funs(as.character)) %>% 
-		mutate(Value = round(as.numeric(Value), 4)) %>% 
+		mutate_all(.funs = as.character) %>% 
+		#mutate(Value = round(as.numeric(Value), 4)) %>% 
+		mutate(Value = as.numeric(Value)) %>% 
 		unite(source, Source_Code,  Survey_Id, sep = ':', remove = TRUE) %>% 
 	rename(
 		ref_area = Country_Code, 
@@ -370,12 +372,16 @@ X <- X %>%
 		info_checkuser = Qta_Check_User ,
 		info_channel = Qta_Channel, 
 		info_web = Web
-		) %>% 
+		) %>%
 		unite(info, info_laststatus, info_loadmode, info_lastcheckdate, info_checkstatus, info_checkuser, info_channel, info_web, sep  =':', remove = TRUE) %>%
-		select_(.dots = c("collection", "ref_area", "source", "indicator", "sex", "sex_version", "classif1", "classif1_version", "classif2", "classif2_version", "time", "obs_value", "obs_status", "note_classif", "note_indicator", "note_source", "freq_code", "info"))
-		
-		
-	X <- X %>% mutate(test = nchar(indicator)) %>% filter(!test %in% 27, !indicator %in% NA) %>% select(-test)	
+		select(!!c("collection", "ref_area", "source", "indicator", "sex", "sex_version", 
+					"classif1", "classif1_version", "classif2", "classif2_version", "time", 
+					"obs_value", "obs_status", "note_classif", "note_indicator", "note_source", "freq_code", "info")) %>%
+		sortDataOracle_oracle_format() %>% 
+		mutate_if(is.factor, as.character) %>% 
+		mutate(	test = nchar(indicator)) %>% 
+		filter(!test %in% 27, !indicator %in% NA) %>% 
+		select(-test)	
 		
 		
 	invisible(gc(reset = TRUE))
